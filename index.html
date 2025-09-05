@@ -1,2163 +1,937 @@
-<!DOCTYPE html> 
-
-<html lang="en"> 
-
-<head> 
-
-<meta charset="UTF-8"> 
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-
-<title>Phishing Puzzler</title> 
-
-<script src="https://cdn.tailwindcss.com"></script> 
-
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script> 
-
-<link rel="preconnect" href="https://fonts.googleapis.com"> 
-
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> 
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"> 
-
-<style> 
-
-:root { 
-
-    --primary-hue: 220; 
-
-    --secondary-hue: 260; 
-
-    --success-hue: 150; 
-
-    --danger-hue: 350; 
-
-    --warning-hue: 45; 
-
-} 
-
- 
-
-body { 
-
-    font-family: 'Poppins', 'Inter', sans-serif; 
-
-    background-color: #f1f5f9; /* slate-100 */ 
-
-    background-image: radial-gradient(circle at top left, hsl(var(--primary-hue) 90% 95%), transparent 40%), 
-
-                      radial-gradient(circle at bottom right, hsl(var(--secondary-hue) 90% 95%), transparent 50%); 
-
-    min-height: 100vh; 
-
-} 
-
-.main-container { 
-
-    background-color: rgba(255, 255, 255, 0.7); 
-
-    backdrop-filter: blur(12px); 
-
-    border: 1px solid rgba(255, 255, 255, 0.2); 
-
-} 
-
-.email-body a, .scenario-body a { 
-
-    text-decoration: underline; 
-
-    color: hsl(var(--primary-hue) 80% 60%); 
-
-    font-weight: 600; 
-
-} 
-
-.email-body a:hover, .scenario-body a:hover { 
-
-    color: hsl(var(--primary-hue) 80% 50%); 
-
-} 
-
-.menu-button { 
-
-    transition: all 0.2s ease-in-out; 
-
-    border: 1px solid transparent; 
-
-} 
-
-.menu-button:hover { 
-
-    transform: translateY(-4px) scale(1.02); 
-
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); 
-
-    filter: brightness(1.05); 
-
-} 
-
-.menu-button:active { 
-
-    transform: translateY(-1px) scale(0.98); 
-
-} 
-
- 
-
-/* Full-screen overlays */ 
-
-#countdown-overlay, #quit-confirm-overlay, #standby-screen, #save-score-overlay, #cyber-safety-screen, #password-strength-screen, #credits-screen, #leaderboard-screen, #interstitial-screen, #end-game-screen { 
-
-    position: absolute; 
-
-    top: 0; 
-
-    left: 0; 
-
-    right: 0; 
-
-    bottom: 0; 
-
-    background-color: rgba(241, 245, 249, 0.8); /* slate-100 */ 
-
-    backdrop-filter: blur(8px); 
-
-    z-index: 50; 
-
-    overflow-y: auto; 
-
-    padding: 1rem; 
-
-} 
-
-.standby-text { 
-
-    animation: pulse 2s infinite; 
-
-} 
-
-@keyframes pulse { 
-
-    0%, 100% { opacity: 1; transform: scale(1); } 
-
-    50% { opacity: 0.7; transform: scale(1.05); } 
-
-} 
-
-.strength-bar { 
-
-    transition: all 0.3s ease-in-out; 
-
-} 
-
-.sms-bubble { 
-
-    max-width: 75%; 
-
-    padding: 12px 20px; 
-
-    border-radius: 20px; 
-
-    margin-bottom: 8px; 
-
-    word-wrap: break-word; 
-
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-
-} 
-
-.sms-bubble.other { 
-
-    background-color: #ffffff; 
-
-    color: #1f2937; /* gray-800 */ 
-
-    align-self: flex-start; 
-
-    border-bottom-left-radius: 4px; 
-
-} 
-
-.stat-card { 
-
-    background-color: rgba(255, 255, 255, 0.6); 
-
-    border: 1px solid rgba(0, 0, 0, 0.05); 
-
-    padding: 0.5rem 1rem; 
-
-    border-radius: 0.75rem; 
-
-} 
-
-</style> 
-
-</head> 
-
-<body class="bg-slate-100 p-4 sm:p-6 md:p-8"> 
-
- 
-
-<div class="main-container w-full max-w-7xl mx-auto min-h-[90vh] shadow-2xl rounded-2xl relative p-6 md:p-8"> 
-
- 
-
-<!-- Standby Screen --> 
-
-<div id="standby-screen" class="flex flex-col items-center justify-center rounded-2xl text-center"> 
-
-    <h1 class="text-4xl md:text-6xl font-bold text-slate-800 mb-4">Welcome to Cyber Savers!</h1> 
-
-    <p class="text-lg md:text-xl text-slate-600 max-w-3xl mb-12"> 
-
-        Test your skills, spot the scams, and become a cybersecurity expert. Choose a mode below to begin your training! 
-
-    </p> 
-
-    <p class="standby-text text-2xl font-semibold text-indigo-600">Tap anywhere to start</p> 
-
-</div> 
-
- 
-
-<!-- Countdown Overlay --> 
-
-<div id="countdown-overlay" class="hidden items-center justify-center rounded-2xl"> 
-
-    <div id="countdown-text" class="text-9xl font-bold text-indigo-600 drop-shadow-lg">3</div> 
-
-</div> 
-
- 
-
-<!-- Save Score Modal --> 
-
-<div id="save-score-overlay" class="hidden items-center justify-center rounded-2xl"> 
-
-    <div class="bg-white p-8 rounded-xl shadow-2xl text-center border"> 
-
-        <h2 class="text-3xl font-bold text-slate-800 mb-4">High Score!</h2> 
-
-        <p class="text-slate-600 mb-6">Enter your name to save your score on the leaderboard.</p> 
-
-        <input type="text" id="initials-input" maxlength="10" class="text-center text-2xl font-bold w-full max-w-xs p-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"> 
-
-        <div class="flex justify-center gap-4 mt-6"> 
-
-            <button id="save-score-btn" class="menu-button bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-lg">Save Score</button> 
-
-            <button id="skip-save-btn" class="menu-button bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold py-3 px-8 rounded-lg">Don't Save</button> 
-
-        </div> 
-
-    </div> 
-
-</div> 
-
- 
-
-<!-- Quit Confirmation Modal --> 
-
-<div id="quit-confirm-overlay" class="hidden items-center justify-center rounded-2xl"> 
-
-    <div class="bg-white p-8 rounded-xl shadow-2xl text-center border"> 
-
-        <h2 class="text-3xl font-bold text-slate-800 mb-4">Are you sure?</h2> 
-
-        <p class="text-slate-600 mb-8">Do you want to quit the current game?</p> 
-
-        <div class="flex justify-center gap-4"> 
-
-            <button id="confirm-quit-btn" class="menu-button bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-8 rounded-lg">Confirm Quit</button> 
-
-            <button id="keep-playing-btn" class="menu-button bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold py-3 px-8 rounded-lg">Keep Playing</button> 
-
-        </div> 
-
-    </div> 
-
-</div> 
-
- 
-
-<!-- Main Menu --> 
-
-<div id="main-menu" class="hidden"> 
-
-    <h1 class="text-5xl font-bold text-center text-slate-800 mb-2">Phishing Puzzler</h1> 
-
-    <p class="text-center text-slate-600 text-lg mb-10">Select a game mode!</p> 
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8"> 
-
-        <div class="space-y-4 p-6 bg-slate-100/50 rounded-xl border"> 
-
-            <h2 class="text-2xl font-bold text-center text-slate-700">Single Player</h2> 
-
-            <button data-difficulty="1" class="menu-button w-full bg-emerald-500 text-white font-bold py-4 rounded-lg text-xl">Easy</button> 
-
-            <button data-difficulty="2" class="menu-button w-full bg-amber-500 text-white font-bold py-4 rounded-lg text-xl">Medium</button> 
-
-            <button data-difficulty="3" class="menu-button w-full bg-rose-500 text-white font-bold py-4 rounded-lg text-xl">Hard</button> 
-
-        </div> 
-
-        <div class="space-y-4 p-6 bg-slate-100/50 rounded-xl border"> 
-
-            <h2 class="text-2xl font-bold text-center text-slate-700">Special Modes</h2> 
-
-            <button id="malware-maze-btn" class="menu-button w-full bg-teal-500 text-white font-bold py-4 rounded-lg text-xl">Malware Maze</button> 
-
-            <button id="social-sleuth-btn" class="menu-button w-full bg-cyan-500 text-white font-bold py-4 rounded-lg text-xl">Social Sleuth</button> 
-
-            <button id="masters-quiz-btn" class="menu-button w-full bg-slate-800 text-white font-bold py-4 rounded-lg text-xl">Masters Quiz</button> 
-
-        </div> 
-
-    </div> 
-
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4"> 
-
-        <button id="duel-mode-btn" class="menu-button w-full bg-purple-600 text-white font-bold py-4 rounded-lg text-xl">2-Player Duel</button> 
-
-        <button id="password-detector-btn" class="menu-button w-full bg-indigo-500 text-white font-bold py-4 rounded-lg text-xl">Password Strength Detector</button> 
-
-    </div> 
-
-    <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4"> 
-
-        <button id="leaderboard-btn" class="menu-button w-full bg-slate-700 text-white font-bold py-3 rounded-lg text-lg">Leaderboard</button> 
-
-        <button id="cyber-safety-btn" class="menu-button w-full bg-blue-500 text-white font-bold py-3 rounded-lg text-lg">Cyber Safety Info</button> 
-
-        <button id="credits-btn" class="menu-button w-full bg-slate-500 text-white font-bold py-3 rounded-lg text-lg">Credits</button> 
-
-    </div> 
-
-</div> 
-
- 
-
-<!-- Credits Screen --> 
-
-<div id="credits-screen" class="hidden text-center p-8 flex flex-col items-center justify-center"> 
-
-    <h1 class="text-4xl font-bold text-slate-800 mb-6">Credits</h1> 
-
-    <div class="space-y-4 text-slate-700 text-xl max-w-lg bg-white/80 p-8 rounded-xl border"> 
-
-        <div> 
-
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">Researched By:</h2> 
-
-            <p>John Fennell</p> 
-
-            <p>Nash Mutukisna</p> 
-
-            <p>Oscar Steele</p> 
-
-        </div> 
-
-        <div class="pt-4"> 
-
-            <p class="text-lg">This game was created with the assistance of AI.</p> 
-
-        </div> 
-
-    </div><div class="mt-8"> 
-
-        <button id="back-to-menu-from-credits-btn" class="menu-button bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg text-xl">Back to Main Menu</button> 
-
-    </div> 
-
-</div> 
-
- 
-
-<!-- Password Strength Screen --> 
-
-<div id="password-strength-screen" class="hidden text-left p-8"> 
-
-    <h1 class="text-4xl font-bold text-slate-800 mb-6 text-center">Password Strength Detector</h1> 
-
-    <div class="max-w-md mx-auto bg-white/80 p-8 rounded-xl border"> 
-
-        <p class="text-center text-slate-600 mb-4">Type a password to see how strong it is. (Don't use a real password!)</p> 
-
-        <input type="text" id="password-input" class="w-full p-3 border-2 border-slate-300 rounded-lg text-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200" placeholder="Type a password..."> 
-
-        <div class="w-full bg-slate-200 rounded-full h-4 mt-4 overflow-hidden"> 
-
-            <div id="strength-bar" class="strength-bar h-4 rounded-full" style="width: 0%;"></div> 
-
-        </div> 
-
-        <p id="strength-text" class="text-center text-2xl font-bold mt-2"></p> 
-
-        <ul id="strength-feedback" class="mt-4 space-y-2"> 
-
-            <!-- Feedback items will be added here --> 
-
-        </ul> 
-
-    </div> 
-
-    <div class="mt-8 text-center"> 
-
-        <button id="back-to-menu-from-password-btn" class="menu-button bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg text-xl">Back to Main Menu</button></div> 
-
-</div> 
-
- 
-
-<!-- Cyber Safety Screen --> 
-
-<div id="cyber-safety-screen" class="hidden text-left p-8"> 
-
-    <h1 class="text-4xl font-bold text-slate-800 mb-6 text-center">Cyber Safety Information</h1> 
-
-    <div class="space-y-6 text-slate-700 max-w-4xl mx-auto bg-white/80 p-8 rounded-xl border"> 
-
-        <div> 
-
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">What is a Cyber Attack?</h2> 
-
-            <p>A cyber attack is when someone tries to harm a computer system or steal data. This can happen in many ways, like through viruses or malware. The amount of malware has been increasing a lot every year, as seen in data from 2008 to 2024. The main targets for these attacks are often large sectors like manufacturing, finance, and healthcare.</p> 
-
-        </div> 
-
-        <div> 
-
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">Understanding Hackers</h2> 
-
-            <p>A hacker is someone who uses their computer skills to get into digital systems.</p> 
-
-            <ul class="list-disc list-inside ml-4 mt-2 space-y-1"> 
-
-                <li><strong>White Hat Hackers:</strong> These are the "good guys." They find security problems so that companies can fix them.</li> 
-
-                <li><strong>Black Hat Hackers:</strong> These are the "bad guys." They break into systems to steal data or cause damage.</li> 
-
-                <li><strong>Gray Hat Hackers:</strong> These hackers are in the middle. They might break into a system without permission but won't cause harm and might tell the owner about the problem.</li> 
-
-            </ul><p class="mt-2">Hackers do this for different reasons, like for money, to cause trouble, or just for the challenge.</p> 
-
-        </div> 
-
-        <div> 
-
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">What is Malware?</h2> 
-
-            <p>Malware is software created for malicious purposes. The first computer virus, Creeper, was made by Bob Thomas. The term "computer virus" was first used by Fred Cohen in 1983.</p> 
-
-        </div> 
-
-        <div> 
-
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">The Impact of Data Breaches: The Optus Case</h2> 
-
-            <p>In September 2022, Optus, a large Australian company, had a major cyber attack. A hacker was able to get the personal information of millions of customers, including names, birthdays, phone numbers, and even driver's licenses. This happened because of a security weakness.</p> 
-
-            <p class="mt-2">The effects on people were serious. For example, one person named Nicole had her identity stolen, including her driver's license. The hacker was even found driving a car with a matching number plate from a parking fine sent to her. This shows that cyber attacks can lead to long-term problems like identity theft.</p> 
-
-        </div> 
-
-        <div> 
-
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">Understanding Identity Theft</h2> 
-
-            <p>Identity theft is when someone uses your personal information without permission, usually for financial gain or to pretend to be you. Scammers might try to get your personal details, bank account numbers, or passwords. According to Scamwatch, there have been over 601,000 scam reports in the last 5 years.</p><p class="mt-2">In 2023, investment scams were the type of scam that caused the biggest financial losses. People aged 60 and over are often the main targets for identity theft criminals.</p> 
-
-        </div> 
-
-        <div> 
-
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">The Rise of AI in Scams</h2> 
-
-            <p>Criminals are now using Artificial Intelligence (AI) to make their scams more believable. They can use AI to create 'deepfake' videos or clone a person's voice to trick people. AI can also be used to create fake blackmail material or to analyze data to find security weaknesses in systems. However, AI also has positive effects, helping companies to better detect and respond to attacks.</p> 
-
-        </div> 
-
-        <div> 
-
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">Real-World Scam Examples: Bushfire Scams</h2> 
-
-            <p>During the 2019 bushfires in Australia, scammers took advantage of people's generosity. They created fake charities and donation websites to steal money from people who were trying to help. This shows that scammers often use real-world events to make their tricks seem more legitimate.</p> 
-
-        </div> 
-
-        <div> 
-
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">How to Stay Safe from Scams</h2> 
-
-            <p>In 2024, Australians lost over $2 billion to scams. Scammers try to trick you with things like fake emails and phone calls to get your money or personal info. You can protect yourself with these 3 simple steps:</p> 
-
-            <ul class="list-decimal list-inside ml-4 mt-2 space-y-1 font-semibold"><li><strong>STOP:</strong> Don't give money or information to anyone if you're not sure.</li> 
-
-                <li><strong>CHECK:</strong> Make sure the person or company you are dealing with is real.</li> 
-
-                <li><strong>PROTECT:</strong> Act quickly if something doesn't feel right.</li> 
-
-            </ul> 
-
-            <p class="mt-2">You can also use tools like strong passwords and multi-factor authentication to secure your accounts. The Australian government and organizations like ID Care and the eSafety Commission provide resources and support to help people stay safe online.</p> 
-
-        </div> 
-
-    </div> 
-
-    <div class="mt-8 text-center"> 
-
-        <button id="back-to-menu-from-safety-btn" class="menu-button bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg text-xl">Back to Main Menu</button> 
-
-    </div> 
-
-</div> 
-
- 
-
-<!-- Leaderboard Screen --> 
-
-<div id="leaderboard-screen" class="hidden text-center p-8"> 
-
-    <h1 class="text-4xl font-bold text-slate-800 mb-6">Top Scores</h1> 
-
-    <div id="leaderboard-list" class="space-y-2 text-left max-w-lg mx-auto mb-6 bg-white/80 p-6 rounded-xl border"> 
-
-        <!-- Scores will be dynamically inserted here --> 
-
-    </div> 
-
-    <button id="back-to-menu-btn" class="menu-button bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg text-xl">Main Menu</button> 
-
-</div> 
-
- 
-
-<!-- Game Container --> 
-
-<div id="game-container" class="hidden"> 
-
-    <header class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-slate-200 pb-4 gap-4"> 
-
-        <div class="flex items-center gap-4"> 
-
-            <button id="give-up-btn" class="menu-button bg-rose-500 text-white font-bold py-2 px-4 rounded-lg text-sm">Give Up</button> 
-
-            <button id="skip-btn" class="menu-button bg-amber-500 text-white font-bold py-2 px-4 rounded-lg text-sm">Skip (<span id="skips-remaining">3</span>)</button> 
-
-        </div> 
-
-        <h1 id="game-title" class="text-3xl font-bold text-slate-800 order-first md:order-none">Phishing Puzzler</h1> 
-
-        <div class="flex items-center space-x-2 sm:space-x-4 mt-4 md:mt-0"> 
-
-            <div class="stat-card text-center"> 
-
-                <div class="text-sm font-semibold text-slate-700">Score</div> 
-
-                <div id="score" class="text-2xl font-bold text-indigo-600">0</div> 
-
-            </div> 
-
-            <div class="stat-card text-center"> 
-
-                <div class="text-sm font-semibold text-slate-700">Timer</div> 
-
-                <div id="timer" class="text-2xl font-bold text-slate-800">45</div> 
-
-            </div> 
-
-            <div class="stat-card text-center"> 
-
-                <div class="text-sm font-semibold text-slate-700">Correct</div> 
-
-                <div id="correct-count" class="text-2xl font-bold text-emerald-600">0 / 0</div> 
-
-            </div> 
-
-            <div class="stat-card text-center"> 
-
-                <div id="difficulty-display" class="text-sm font-semibold text-slate-700">Difficulty</div> 
-
-                <div id="level" class="text-2xl font-bold text-slate-600"></div> 
-
-            </div> 
-
-        </div> 
-
-    </header> 
-
-    <main> 
-
-        <div id="duel-turn-display" class="text-center text-2xl font-bold text-purple-600 mb-4 hidden"></div> 
-
-        <div id="content-container" class="bg-slate-800 border border-slate-700 rounded-lg p-6 mb-6 min-h-[300px] text-slate-200 shadow-inner"> 
-
-            <div id="email-template" class="hidden"> 
-
-                <div class="flex justify-between items-center mb-4 border-b border-slate-600 pb-3"> 
-
-                    <div> 
-
-                        <p class="font-bold text-lg text-slate-100" id="email-sender"></p> 
-
-                        <p class="text-sm text-slate-400" id="email-subject"></p> 
-
-                    </div> 
-
-                    <p class="text-sm text-slate-400" id="email-date"></p> 
-
-                </div> 
-
-                <div class="email-body leading-relaxed" id="email-body"></div> 
-
-            </div> 
-
-            <div id="malware-template" class="hidden"> 
-
-                <p class="text-xl font-semibold text-slate-100 mb-4" id="scenario-text"></p> 
-
-            </div> 
-
-            <div id="social-template" class="hidden"> 
-
-                <div class="flex flex-col items-start space-y-2 p-4 bg-slate-200 rounded-lg" id="social-scenario"> 
-
-                    <!-- SMS bubbles will be inserted here --> 
-
-                </div> 
-
-            </div> 
-
-        </div> 
-
-        <div id="message-box" class="text-center p-4 mb-4 rounded-lg text-white font-semibold hidden"></div> 
-
-        <div id="answer-buttons" class="grid grid-cols-1 sm:grid-cols-2 justify-center items-center gap-4"></div> 
-
-        <div class="text-center mt-6"> 
-
-            <button id="next-btn" class="hidden menu-button bg-indigo-500 text-white font-bold py-3 px-8 rounded-lg">Next Question</button> 
-
-        </div> 
-
-    </main> 
-
-</div> 
-
- 
-
-<!-- Interstitial Screen for Duels --> 
-
-<div id="interstitial-screen" class="hidden flex-col items-center justify-center text-center p-8"> 
-
-    <h1 id="interstitial-title" class="text-4xl font-bold text-slate-800 mb-4">Player 1 Finished!</h1> 
-
-    <p class="text-2xl text-slate-600 mb-8">Ready Player 2? Your turn starts now!</p> 
-
-    <button id="start-next-turn-btn" class="menu-button bg-purple-600 text-white font-bold py-3 px-8 rounded-lg text-xl">Start Player 2's Turn</button> 
-
-</div> 
-
- 
-
-<!-- End Game Screen --> 
-
-<div id="end-game-screen" class="hidden flex-col items-center justify-center text-center p-8"> 
-
-    <div class="bg-white/80 p-8 rounded-xl border shadow-xl"> 
-
-        <h1 id="end-game-title" class="text-4xl font-bold text-slate-800 mb-4">Challenge Over!</h1> 
-
-        <div id="single-player-results"> 
-
-            <p class="text-2xl text-slate-600 mb-2">Your Final Score:</p> 
-
-            <p id="final-score" class="text-7xl font-bold text-indigo-600 mb-6">0</p> 
-
-            <p class="text-xl text-slate-600 mb-4">Average Time: <span id="avg-time" class="font-semibold">0.0s</span></p> 
-
-        </div> 
-
-        <div id="duel-results" class="hidden"> 
-
-            <p id="duel-winner" class="text-3xl font-bold text-emerald-600 mb-6"></p> 
-
-            <div class="flex flex-col sm:flex-row justify-around items-center text-left w-full max-w-2xl gap-8"> 
-
-                <div class="p-4 rounded-lg bg-blue-50 border-blue-200 border w-full"> 
-
-                    <h2 class="text-2xl font-bold text-blue-600">Player 1</h2> 
-
-                    <p class="text-xl">Score: <span id="p1-final-score" class="font-semibold"></span></p> 
-
-                    <p class="text-xl">Time: <span id="p1-final-time" class="font-semibold"></span>s</p> 
-
-                    <p class="text-xl">Avg Time: <span id="p1-avg-time" class="font-semibold"></span>s</p> 
-
-                </div> 
-
-                <div class="p-4 rounded-lg bg-rose-50 border-rose-200 border w-full"> 
-
-                    <h2 class="text-2xl font-bold text-rose-600">Player 2</h2> 
-
-                    <p class="text-xl">Score: <span id="p2-final-score" class="font-semibold"></span></p> 
-
-                    <p class="text-xl">Time: <span id="p2-final-time" class="font-semibold"></span>s</p> 
-
-                    <p class="text-xl">Avg Time: <span id="p2-avg-time" class="font-semibold"></span>s</p> 
-
-                </div> 
-
-            </div> 
-
-        </div> 
-
-        <div class="flex justify-center items-center gap-4 mt-8"> 
-
-            <button id="main-menu-btn" class="menu-button bg-indigo-500 text-white font-bold py-3 px-8 rounded-lg text-xl">Main Menu</button> 
-
-            <button id="play-again-btn" class="hidden menu-button bg-emerald-500 text-white font-bold py-3 px-8 rounded-lg text-xl">Play Again</button> 
-
-        </div> 
-
-    </div> 
-
-</div> 
-
- 
-
-</div> 
-
- 
-
-<script> 
-
-document.addEventListener('DOMContentLoaded', () => { 
-
- 
-
-// --- CONTENT DATABASE --- 
-
-const allContent = { 
-
-    phishing: { 
-
-        singlePlayer: [ 
-
-            { level: 1, sender: 'Amaz0n Support <support@amaz0n-prime-deals.com>', subject: 'Yor account has ben limited!', body: `<p>Dear Customer,</p><p>We noticed some unusual activity on your account. For your safety, we have limited your account.</p><p>Please click here to verify your details: <a href="#" onclick="return false;">Verify Now</a></p><p>Thank you for your cooperation.</p>`, isFake: true, explanation: 'This email is fake. Notice the misspellings ("Yor", "ben"), the unusual sender email ("Amaz0n" with a zero), and the suspicious link.' }, 
-
-            { level: 1, sender: 'Netflix <info@service.netflix.com>', subject: 'New sign-in to your account', body: `<p>Hi there,</p><p>There was a new sign-in to your account from a new device. If this was you, you can ignore this email.</p><p>If this wasn't you, please review your account activity.</p><p>Thanks,<br>The Netflix Team</p>`, isFake: false, explanation: 'This is a legitimate security notification from Netflix. The sender address is correct and there are no suspicious links or urgent demands.' }, 
-
-            { level: 1, sender: 'Your Bank <security@your-bank-online.co>', subject: 'Urgent: Action Required on your Account', body: `<p>Hello,</p><p>We have detected a suspicious login attempt. Please confirm your identity immediately by clicking the link below.</p><p><a href="#" onclick="return false;">Secure Login</a></p>`, isFake: true, explanation: 'This is fake. Banks usually don\'t ask you to log in from a link in an email. The sender\'s address looks slightly off.' }, 
-
-            { level: 1, sender: 'Social Media <friends@face-book-alerts.net>', subject: 'You have a new freind request!', body: `<p>Hi,</p><p>Someone wants to be your freind! Click to accept.</p><p><a href="#" onclick="return false;">See Request</a></p>`, isFake: true, explanation: 'This is fake. Notice the misspelling of "friend" and the unofficial sender address.' }, 
-
-            { level: 1, sender: 'Local Library <noreply@locallibrary.org>', subject: 'Your book is due soon', body: `<p>Dear Patron,</p><p>This is a friendly reminder that your book, "The Mystery of the Clockwork Sparrow", is due in 3 days.</p><p>Thank you!</p>`, isFake: false, explanation: 'This is a legitimate reminder. The email address is plausible and it doesn\'t ask for any personal information.' }, 
-
-            { level: 1, sender: 'WINNER!!! <prize@freelottery.win>', subject: 'CONGRATULATIONS YOU HAVE WON!!!', body: `<p>YOU ARE THE LUCKY WINNER OF $1,000,000!!!</p><p>To claim your prize, send us your bank details and a small processing fee of $100.</p>`, isFake: true, explanation: 'This is a classic fake email. Legitimate lotteries don\'t ask for a fee to claim a prize.' }, 
-
-            { level: 1, sender: 'School Principal <principal@myschool.edu>', subject: 'Important: School Closure', body: `<p>Dear Parents,</p><p>Due to a water main break, the school will be closed tomorrow. Please check the school website for updates.</p>`, isFake: false, explanation: 'This looks like a legitimate announcement. It directs you to the official school website instead of a suspicious link.' }, 
-
-            { level: 1, sender: 'Parcel Delivery <track@fedex-express-shipping.com>', subject: 'Your pacage is waiting', body: `<p>We could not deliver your pacage. Please click here to reschedule.</p><p><a href="#" onclick="return false;">Reschedule Delivery</a></p>`, isFake: true, explanation: 'This is fake. Notice the misspelling of "package" and the unofficial sender address.' }, 
-
-            { level: 1, sender: 'Gaming Store <deals@steam-powered.com>', subject: 'Your weekly deals are here!', body: `<p>Hi Gamer,</p><p>Check out the latest deals on great games this week!</p><p>Happy Gaming!</p>`, isFake: false, explanation: 'This is a legitimate promotional email. The sender address is correct and it just directs you to their store.' }, 
-
-            { level: 2, sender: 'Google <no-reply@google-security-alerts.com>', subject: 'Security alert for your linked Google Account', body: `<p>Your password was changed.</p><p>If you didn't change your password, your account might have been hijacked. To get back into your account, you'll need to reset your password.</p><p><a href="#" onclick="return false;">Reset Password</a></p><p>The Google Accounts team</p>`, isFake: true, explanation: 'This email is fake. While it looks convincing, the link would go to a non-Google domain. Always hover over links to check the destination.' }, 
-
-            { level: 2, sender: 'PayPal <service@paypal.com>', subject: 'Receipt for your payment to Spotify', body: `<p>Hello,</p><p>You sent a payment of $10.99 AUD to Spotify AB.</p><p>If you did not make this payment, you can cancel it by logging into your account on the official PayPal website.</p><p>Thanks for using PayPal.</p>`, isFake: false, explanation: 'This is a legitimate receipt. The sender is correct, and it doesn\'t ask you to click a link to fix a problem, but rather to log in to the official site yourself.' }, 
-
-            { level: 2, sender: 'Dropbox <no-reply@dropboxmail.com>', subject: 'Your Dropbox is almost full', body: `<p>Hi,</p><p>Your Dropbox is running out of space! Upgrade now to get more storage.</p><p>You are currently using 95% of your 2 GB quota.</p><p><a href="#" onclick="return false;">Upgrade your plan now!</a></p>`, isFake: true, explanation: 'This is a fake email. The link would point to a non-official Dropbox domain. Always go directly to the official website to manage your account.' }, 
-
-            { level: 2, sender: 'Amazon <orders@amazon.com>', subject: 'Your order #123-4567890 has shipped', body: `<p>Hello,</p><p>We're happy to let you know that your order has shipped. You can track your package on our website.</p>`, isFake: false, explanation: 'This is a legitimate shipping confirmation. The sender address is official and it directs you to the real website.' }, 
-
-            { level: 2, sender: 'Microsoft <account-update@microsoft-support.net>', subject: 'Unusual sign-in activity', body: `<p>Dear user,</p><p>We detected a sign-in from a new location. If this was not you, please secure your account immediately.</p><p><a href="#" onclick="return false;">Secure Your Account</a></p>`, isFake: true, explanation: 'This is fake. The sender domain "microsoft-support.net" is not an official Microsoft domain.' }, 
-
-            { level: 2, sender: 'Your Phone Company <billing@telstra.com.au>', subject: 'Your latest bill is now available', body: `<p>Hi,</p><p>Your monthly bill is ready to view. Please log in to your account to see the details.</p>`, isFake: false, explanation: 'This is a legitimate bill notification. It asks you to log in to your account yourself, which is safe.' }, 
-
-            { level: 2, sender: 'Facebook <notification@facebook.com>', subject: 'You have a new memory to look back on', body: `<p>We thought you'd like to look back on this post from 5 years ago.</p><p>We hope you enjoy this memory.</p>`, isFake: false, explanation: 'This is a legitimate notification from Facebook. The sender address is correct.' }, 
-
-            { level: 2, sender: 'Australian Tax Office <mygov@ato-gov.online>', subject: 'You are eligible for a tax refund', body: `<p>Dear Citizen,</p><p>You are due a tax refund of $450.25. Please click the link below and enter your details to receive your refund.</p><p><a href="#" onclick="return false;">Claim Refund</a></p>`, isFake: true, explanation: 'This is fake. The tax office will never send you a link to claim a refund. The domain "ato-gov.online" is also fake.' }, 
-
-            { level: 2, sender: 'LinkedIn <jobs-noreply@linkedin.com>', subject: 'You appeared in 4 searches this week', body: `<p>Hi,</p><p>See who's searching for you. Your profile is getting attention!</p>`, isFake: false, explanation: 'This is a legitimate notification from LinkedIn designed to get you to use their service.' }, 
-
-            { level: 3, sender: 'Apple Support <support@apple.com>', subject: 'RE: Your recent inquiry [Case #1928374]', body: `<p>Dear Customer,</p><p>Thank you for contacting Apple Support. We have an update regarding your case.</p><p>To view the secure message, please download the attached document and open it using your account password.</p><p>Sincerely,<br>Apple Support</p>`, isFake: true, explanation: 'This is a fake email. Legitimate companies will almost never send updates in a password-protected attachment. This is a common tactic to deliver malware.' }, 
-
-            { level: 3, sender: 'Microsoft Account Team <account-security-noreply@accountprotection.microsoft.com>', subject: 'Microsoft account unusual sign-in activity', body: `<p>We detected something unusual about a recent sign-in to the Microsoft account li*****@hotmail.com.</p><p>To help keep you safe, we've blocked access to your inbox. Please review the recent activity and we'll help you take corrective action.</p>`, isFake: false, explanation: 'This is a legitimate security alert from Microsoft. The sender email is an official Microsoft domain.' }, 
-
-            { level: 3, sender: 'Your HR Department <hr@internal-company-email.com>', subject: 'Important: Annual Performance Review Documents', body: `<p>Hello Team,</p><p>Please find the documents for your annual performance review attached. You will need to enable macros to view the content properly.</p><p>Please review and sign before the end of the week.</p><p>Best,<br>HR</p>`, isFake: true, explanation: 'This is a very dangerous fake email. Asking you to "enable macros" is a huge red flag, as this is a common way for attackers to run malicious code on your computer.' }, 
-
-            { level: 3, sender: 'Google Docs <drive-shares-noreply@google.com>', subject: 'A document has been shared with you', body: `<p>Hi,</p><p>Your colleague has shared a document titled "Q3 Financial Report".</p><p>Click below to open the document.</p>`, isFake: false, explanation: 'This is a legitimate notification from Google Docs. The sender address is correct.' }, 
-
-            { level: 3, sender: 'IT Department <it.support@yourcompany.com>', subject: 'Urgent: Mandatory Password Reset', body: `<p>All Employees,</p><p>Due to a recent security update, all employees must reset their password within the next 24 hours. Please click the following link to update your credentials.</p><p><a href="#" onclick="return false;">Reset Password Now</a></p>`, isFake: true, explanation: 'This is a very tricky fake email. The link looks almost correct, but it would lead to a fake portal designed to steal credentials.' }, 
-
-            { level: 3, sender: 'DocuSign <dse@docusign.net>', subject: 'Completed: Your document has been signed', body: `<p>Hello,</p><p>All parties have now signed the document "Service Agreement". You can view the completed document from our secure portal.</p>`, isFake: false, explanation: 'This is a legitimate email from DocuSign. The sender address is official.' }, 
-
-            { level: 3, sender: 'Zoom <no-reply@zoom.us>', subject: 'Your cloud recording is now available', body: `<p>Hi there,</p><p>Your Zoom cloud recording from your meeting "Project Brainstorm" is now available. You can view it or share it.</p>`, isFake: false, explanation: 'This is a legitimate notification from Zoom. The sender address is correct.' }, 
-
-            { level: 3, sender: 'Apple <invoice@billing.apple.com>', subject: 'Your receipt from Apple.', body: `<p>Dear Customer,</p><p>Thank you for your recent purchase of a "Gold Package" for $99.99. If you did not make this purchase, please contact us immediately to cancel the transaction by clicking the link below.</p><p><a href="#" onclick="return false;">Cancel Transaction</a></p>`, isFake: true, explanation: 'This is fake. It tries to create panic about an expensive purchase. The cancellation link is not a real Apple domain.' }, 
-
-            { level: 3, sender: 'Google <noreply@google.com>', subject: 'A new sign-in on Windows', body: `<p>Your Google Account was just signed in to from a new Windows device. You're getting this email to make sure it was you.</p>`, isFake: false, explanation: 'This is a legitimate security alert from Google. The sender address is correct and it provides information without asking you to click a suspicious link.' } 
-
-        ], 
-
-        standbySinglePlayer: [ // Used for Duels and as backup questions 
-
-            { level: 1, sender: 'Free Stuff <deals@best-offers-4u.biz>', subject: 'Get a free iFone now!', body: '<p>You have been selected to receive a free iFone! Just pay for shipping.</p><p><a href="#" onclick="return false;">Claim Now</a></p>', isFake: true, explanation: 'Fake. Misspelling "iPhone" and coming from an unofficial domain are big red flags.' }, 
-
-            { level: 1, sender: 'Your Pizza Place <orders@dominospizza.com>', subject: 'Your pizza is on its way!', body: '<p>Hi! Your delicious pizza is in the oven and will be with you shortly. Track it online!</p>', isFake: false, explanation: 'Legitimate. This is a standard order confirmation from a real company.' }, 
-
-            { level: 1, sender: 'Unknown Sender <dave123@hotmail.com>', subject: 'check this out', body: '<p>lol i saw this and thought of you</p><p><a href="#" onclick="return false;">Click Here</a></p>', isFake: true, explanation: 'Fake. Emails from unknown people with vague subjects and strange links are often malicious.' }, 
-
-            { level: 2, sender: 'Your Electricity Co. <bills@energy-australia-billing.com>', subject: 'Your electricity bill is overdue', body: '<p>Dear Customer, your bill is overdue. Please pay immediately to avoid disconnection.</p><p><a href="#" onclick="return false;">Pay Now</a></p>', isFake: true, explanation: 'Fake. The sender address is not official. Always go to the company\'s website directly to pay bills.' }, 
-
-            { level: 2, sender: 'Adobe <message@adobe.com>', subject: 'Your free trial is ending', body: '<p>Your Creative Cloud trial ends in 3 days. Upgrade to a paid plan to keep using our apps.</p>', isFake: false, explanation: 'Legitimate. This is a standard marketing email from Adobe.' }, 
-
-            { level: 3, sender: 'CEO <ceo@yourcompany.com>', subject: 'Urgent Request', body: '<p>I need you to buy 5 gift cards for a client immediately. I am in a meeting and cannot do it myself. Please send me the codes once you have them. I will reimburse you.</p>', isFake: true, explanation: 'Fake. This is a classic "CEO fraud" scam. Your boss will never ask you to buy gift cards in this manner.' } 
-
-        ] 
-
-    }, 
-
-    malware: [ 
-
-        { scenario: "You receive an email with a Word document attachment titled 'Invoice'. The email asks you to 'enable macros' to view it correctly. Should you open it?", answers: ["Yes, it's just an invoice.", "No, enabling macros can run malicious code."], correct: 1, explanation: "Never enable macros on documents from untrusted sources. It's a very common way for attackers to install malware on your computer." }, 
-
-        { scenario: "You download a free game from a website you don't know. The installer asks for administrative privileges to continue. Is this safe?", answers: ["Yes, games need admin rights.", "No, it could be installing malware."], correct: 1, explanation: "Be very careful giving admin privileges. While some software needs it, unknown programs could use it to install malware, spyware, or adware." }, 
-
-        { scenario: "A pop-up appears on your screen saying 'Your computer is infected with 5 viruses! Click here to scan now!'. What should you do?", answers: ["Click the pop-up to fix the problem.", "Close the pop-up and run a scan with your own antivirus."], correct: 1, explanation: "This is a scareware tactic. The pop-up itself is the threat. Closing it (without clicking on it) and using your trusted antivirus software is the correct action." }, 
-
-        { scenario: "What is 'ransomware'?", answers: ["Software that steals your passwords.", "Software that locks your files and demands payment to unlock them."], correct: 1, explanation: "Ransomware encrypts your files, making them inaccessible, and the attackers demand a ransom (usually in cryptocurrency) for the decryption key." }, 
-
-        { scenario: "What is the best way to protect against losing your files to ransomware?", answers: ["Pay the ransom if it happens.", "Regularly back up your important files."], correct: 1, explanation: "If you have a recent backup of your files, you can restore them without needing to pay the attackers. It's the most effective defense." }, 
-
-        { scenario: "You find a USB stick in a public place. What is the safest thing to do with it?", answers: ["Plug it into your computer to see who it belongs to.", "Leave it or give it to a lost and found without plugging it in."], correct: 1, explanation: "Attackers sometimes leave infected USB sticks in public, hoping a curious person will plug it into their computer, which then installs malware. This is known as 'USB baiting'." } 
-
-    ], 
-
-    social: [ 
-
-        { 
-
-            scenario: [ 
-
-                { from: "other", text: "Hey it's Mum. I've broken my phone and I'm using a friend's. I need you to pay an urgent bill for me. Can you send $250 to this account? BSB: 123-456 Acc: 98765432" }, 
-
-            ], 
-
-            answers: ["Send the money right away.", "Call your mum on her usual number to check."], 
-
-            correct: 1, 
-
-            explanation: "This is a common 'Hi Mum' scam. Scammers pretend to be a family member in trouble. Always verify by contacting the person on their known number before sending money." 
-
-        }, 
-
-        { 
-
-            scenario: [ 
-
-                { from: "other", text: "AUSPOST: Your package has been held at our depot due to an unpaid shipping fee. Follow the link to pay and reschedule delivery: auspost-tracking.net" }, 
-
-            ], 
-
-            answers: ["Click the link and pay the fee.", "Ignore the message; it's a scam."], 
-
-            correct: 1, 
-
-            explanation: "This is a smishing (SMS phishing) scam. The link goes to a fake website designed to steal your credit card details. Australia Post will never ask for payment via a text link." 
-
-        }, 
-
-        { 
-
-            scenario: [ 
-
-                { from: "other", text: "You've won a $1000 gift card from Coles! To claim, click here and complete a short survey: coles-prizes.com" }, 
-
-            ], 
-
-            answers: ["Complete the survey to get the prize.", "Delete the message; it's too good to be true."], 
-
-            correct: 1, 
-
-            explanation: "Unsolicited prize notifications are almost always scams. The 'survey' is designed to steal your personal information or trick you into signing up for expensive subscriptions." 
-
-        }, 
-
-        { 
-
-            scenario: [ 
-
-                { from: "other", text: "Bank Alert: A suspicious transaction of $500 was detected on your account. If this was NOT you, please call our fraud prevention team immediately on 1800-123-456 to cancel." }, 
-
-            ], 
-
-            answers: ["Call the number in the SMS.", "Find your bank's official number on their website and call that."], 
-
-            correct: 1, 
-
-            explanation: "Never trust a phone number sent in an unexpected message. Scammers set up fake call centers. Always find the official number from the company's website or the back of your card." 
-
-        } 
-
-    ], 
-
-    masters: [] // This will be populated from the other categories 
-
-}; 
-
-allContent.masters = [ 
-
-    ...allContent.phishing.singlePlayer.filter(q => q.level === 3), 
-
-    ...allContent.malware, 
-
-    ...allContent.social 
-
-]; 
-
- 
-
- 
-
-// --- GAME STATE --- 
-
-let gameState = {}; 
-
- 
-
-function resetGameState() { 
-
-    gameState = { 
-
-        score: 0, 
-
-        questions: [], 
-
-        currentQuestionIndex: 0, 
-
-        timer: 45, 
-
-        timerInterval: null, 
-
-        skipsRemaining: 3, 
-
-        answeredCorrectly: 0, 
-
-        totalAnswered: 0, 
-
-        timePerQuestion: [], 
-
-        startTime: null, 
-
-        difficulty: 1, 
-
-        mode: 'phishing', // phishing, malware, social, masters, duel 
-
-        isDuel: false, 
-
-        currentPlayer: 1, 
-
-        player1: { score: 0, time: 0, timePerQuestion: [] }, 
-
-        player2: { score: 0, time: 0, timePerQuestion: [] }, 
-
-    }; 
-
-} 
-
- 
-
- 
-
-// --- DOM ELEMENTS --- 
-
-const screens = { 
-
-    standby: document.getElementById('standby-screen'), 
-
-    mainMenu: document.getElementById('main-menu'), 
-
-    game: document.getElementById('game-container'), 
-
-    countdown: document.getElementById('countdown-overlay'), 
-
-    endGame: document.getElementById('end-game-screen'), 
-
-    quitConfirm: document.getElementById('quit-confirm-overlay'), 
-
-    saveScore: document.getElementById('save-score-overlay'), 
-
-    leaderboard: document.getElementById('leaderboard-screen'), 
-
-    cyberSafety: document.getElementById('cyber-safety-screen'), 
-
-    passwordStrength: document.getElementById('password-strength-screen'), 
-
-    credits: document.getElementById('credits-screen'), 
-
-    interstitial: document.getElementById('interstitial-screen'), 
-
-}; 
-
- 
-
-const gameElements = { 
-
-    score: document.getElementById('score'), 
-
-    timer: document.getElementById('timer'), 
-
-    correctCount: document.getElementById('correct-count'), 
-
-    level: document.getElementById('level'), 
-
-    difficultyDisplay: document.getElementById('difficulty-display'), 
-
-    gameTitle: document.getElementById('game-title'), 
-
-    skipsRemaining: document.getElementById('skips-remaining'), 
-
-    answerButtons: document.getElementById('answer-buttons'), 
-
-    messageBox: document.getElementById('message-box'), 
-
-    nextBtn: document.getElementById('next-btn'), 
-
-    giveUpBtn: document.getElementById('give-up-btn'), 
-
-    skipBtn: document.getElementById('skip-btn'), 
-
-    contentContainer: document.getElementById('content-container'), 
-
-    emailTemplate: document.getElementById('email-template'), 
-
-    malwareTemplate: document.getElementById('malware-template'), 
-
-    socialTemplate: document.getElementById('social-template'), 
-
-    duelTurnDisplay: document.getElementById('duel-turn-display'), 
-
-}; 
-
- 
-
-const countdownElements = { 
-
-    overlay: document.getElementById('countdown-overlay'), 
-
-    text: document.getElementById('countdown-text'), 
-
-}; 
-
- 
-
-const endGameElements = { 
-
-    title: document.getElementById('end-game-title'), 
-
-    finalScore: document.getElementById('final-score'), 
-
-    avgTime: document.getElementById('avg-time'), 
-
-    prizeMessage: document.getElementById('prize-message'), 
-
-    singlePlayerResults: document.getElementById('single-player-results'), 
-
-    duelResults: document.getElementById('duel-results'), 
-
-    duelWinner: document.getElementById('duel-winner'), 
-
-    p1FinalScore: document.getElementById('p1-final-score'), 
-
-    p1FinalTime: document.getElementById('p1-final-time'), 
-
-    p1AvgTime: document.getElementById('p1-avg-time'), 
-
-    p2FinalScore: document.getElementById('p2-final-score'), 
-
-    p2FinalTime: document.getElementById('p2-final-time'), 
-
-    p2AvgTime: document.getElementById('p2-avg-time'), 
-
-    playAgainBtn: document.getElementById('play-again-btn'), 
-
-}; 
-
- 
-
- 
-
-// --- UTILITY FUNCTIONS --- 
-
-function showScreen(screenId) { 
-
-    Object.values(screens).forEach(screen => { 
-
-        if (screen.id === 'game-container') { 
-
-             screen.classList.add('hidden'); 
-
-        } else { 
-
-             screen.classList.add('hidden'); 
-
-             screen.classList.remove('flex', 'items-center', 'justify-center'); 
-
-        } 
-
-    }); 
-
- 
-
-    const screenToShow = screens[screenId]; 
-
-    if (screenToShow) { 
-
-        screenToShow.classList.remove('hidden'); 
-
-        if (['standby', 'countdown', 'quitConfirm', 'saveScore', 'interstitial', 'endGame', 'credits'].includes(screenId)) { 
-
-            screenToShow.classList.add('flex', 'items-center', 'justify-center'); 
-
-        } 
-
-    } 
-
-} 
-
- 
-
- 
-
-function shuffleArray(array) { 
-
-    for (let i = array.length - 1; i > 0; i--) { 
-
-        const j = Math.floor(Math.random() * (i + 1)); 
-
-        [array[i], array[j]] = [array[j], array[i]]; 
-
-    } 
-
-    return array; 
-
-} 
-
- 
-
-// --- GAME LOGIC --- 
-
- 
-
-function startGame(config) { 
-
-    resetGameState(); 
-
-    gameState.difficulty = config.difficulty || 1; 
-
-    gameState.mode = config.mode || 'phishing'; 
-
-    gameState.isDuel = config.isDuel || false; 
-
-     
-
-    switch (gameState.mode) { 
-
-        case 'phishing': 
-
-            const baseQuestions = allContent.phishing.singlePlayer.filter(q => q.level <= gameState.difficulty); 
-
-            gameState.questions = shuffleArray([...baseQuestions]).slice(0, 10); 
-
-            gameElements.difficultyDisplay.textContent = 'Difficulty'; 
-
-            gameElements.level.textContent = {1: 'Easy', 2: 'Medium', 3: 'Hard'}[gameState.difficulty]; 
-
-            break; 
-
-        case 'malware': 
-
-            gameState.questions = shuffleArray([...allContent.malware]); 
-
-            gameElements.level.textContent = 'N/A'; 
-
-            gameElements.difficultyDisplay.textContent = 'Mode'; 
-
-            break; 
-
-        case 'social': 
-
-            gameState.questions = shuffleArray([...allContent.social]); 
-
-            gameElements.level.textContent = 'N/A'; 
-
-            gameElements.difficultyDisplay.textContent = 'Mode'; 
-
-            break; 
-
-        case 'masters': 
-
-            gameState.questions = shuffleArray([...allContent.masters]).slice(0, 15); 
-
-            gameElements.level.textContent = 'Expert'; 
-
-             gameElements.difficultyDisplay.textContent = 'Mode'; 
-
-            break; 
-
-        case 'duel': 
-
-             const duelQuestions = shuffleArray([...allContent.phishing.singlePlayer, ...allContent.phishing.standbySinglePlayer]); 
-
-             gameState.questions = duelQuestions.slice(0, 10); // 5 questions per player 
-
-             gameElements.level.textContent = 'Duel'; 
-
-             gameElements.difficultyDisplay.textContent = 'Mode'; 
-
-             break; 
-
-    } 
-
-     
-
-    gameElements.gameTitle.textContent = { 
-
-        phishing: 'Phishing Puzzler', 
-
-        malware: 'Malware Maze', 
-
-        social: 'Social Sleuth', 
-
-        masters: 'Masters Quiz', 
-
-        duel: '2-Player Duel' 
-
-    }[gameState.mode]; 
-
- 
-
-    endGameElements.playAgainBtn.onclick = () => startGame(config); 
-
-    endGameElements.playAgainBtn.classList.remove('hidden'); 
-
- 
-
-    startCountdown(() => { 
-
-        showScreen('game'); 
-
-        startTurn(); 
-
-    }); 
-
-} 
-
- 
-
-function startTurn() { 
-
-    gameState.currentQuestionIndex = gameState.isDuel ? (gameState.currentPlayer === 1 ? 0 : 5) : 0; 
-
-     
-
-    if (gameState.isDuel) { 
-
-        gameElements.duelTurnDisplay.textContent = `Player ${gameState.currentPlayer}'s Turn`; 
-
-        gameElements.duelTurnDisplay.classList.remove('hidden'); 
-
-        gameElements.score.textContent = gameState.currentPlayer === 1 ? gameState.player1.score : gameState.player2.score; 
-
-        gameElements.correctCount.textContent = `0 / 5`; 
-
-    } else { 
-
-        gameElements.duelTurnDisplay.classList.add('hidden'); 
-
-        gameElements.score.textContent = gameState.score; 
-
-        gameElements.correctCount.textContent = `0 / ${gameState.questions.length}`; 
-
-    } 
-
-     
-
-    gameState.skipsRemaining = 3; 
-
-    gameElements.skipsRemaining.textContent = gameState.skipsRemaining; 
-
-    gameState.answeredCorrectly = 0; 
-
-    gameState.totalAnswered = 0; 
-
-     
-
-    loadQuestion(); 
-
-} 
-
- 
-
- 
-
-function startCountdown(callback) { 
-
-    showScreen('countdown'); 
-
-    let count = 3; 
-
-    countdownElements.text.textContent = count; 
-
-    const interval = setInterval(() => { 
-
-        count--; 
-
-        if (count > 0) { 
-
-            countdownElements.text.textContent = count; 
-
-        } else if (count === 0) { 
-
-            countdownElements.text.textContent = "Go!"; 
-
-        } else { 
-
-            clearInterval(interval); 
-
-            callback(); 
-
-        } 
-
-    }, 1000); 
-
-} 
-
- 
-
-function loadQuestion() { 
-
-    if ( (gameState.isDuel && gameState.currentQuestionIndex === (gameState.currentPlayer === 1 ? 5 : 10)) || 
-
-         (!gameState.isDuel && gameState.currentQuestionIndex >= gameState.questions.length) ) { 
-
-        endGame(); 
-
-        return; 
-
-    } 
-
- 
-
-    const question = gameState.questions[gameState.currentQuestionIndex]; 
-
-    if (!question) { endGame(); return; } 
-
-     
-
-    gameElements.emailTemplate.classList.add('hidden'); 
-
-    gameElements.malwareTemplate.classList.add('hidden'); 
-
-    gameElements.socialTemplate.classList.add('hidden'); 
-
-    gameElements.messageBox.classList.add('hidden'); 
-
-    gameElements.nextBtn.classList.add('hidden'); 
-
-    gameElements.answerButtons.innerHTML = ''; 
-
- 
-
-    if (gameState.mode === 'phishing' || (gameState.mode === 'masters' && question.sender) || gameState.mode === 'duel') { 
-
-        displayPhishingQuestion(question); 
-
-    } else if (gameState.mode === 'malware' || (gameState.mode === 'masters' && question.scenario && !Array.isArray(question.scenario))) { 
-
-        displayMalwareQuestion(question); 
-
-    } else if (gameState.mode === 'social' || (gameState.mode === 'masters' && Array.isArray(question.scenario))) { 
-
-        displaySocialQuestion(question); 
-
-    } 
-
- 
-
-    clearInterval(gameState.timerInterval); 
-
-    gameState.timer = 45; 
-
-    gameElements.timer.textContent = gameState.timer; 
-
-    gameState.startTime = Date.now(); 
-
-    gameState.timerInterval = setInterval(updateTimer, 1000); 
-
-    gameElements.skipBtn.disabled = false; 
-
-} 
-
- 
-
-function displayPhishingQuestion(question) { 
-
-    gameElements.emailTemplate.classList.remove('hidden'); 
-
-    document.getElementById('email-sender').textContent = question.sender; 
-
-    document.getElementById('email-subject').textContent = question.subject; 
-
-    document.getElementById('email-body').innerHTML = question.body; 
-
-    document.getElementById('email-date').textContent = new Date().toLocaleDateString(); 
-
- 
-
-    const realBtn = document.createElement('button'); 
-
-    realBtn.textContent = 'Real Email'; 
-
-    realBtn.className = 'menu-button w-full bg-blue-500 text-white font-bold py-4 rounded-lg text-xl'; 
-
-    realBtn.onclick = () => checkAnswer(false); 
-
- 
-
-    const fakeBtn = document.createElement('button'); 
-
-    fakeBtn.textContent = 'Fake Email'; 
-
-    fakeBtn.className = 'menu-button w-full bg-rose-500 text-white font-bold py-4 rounded-lg text-xl'; 
-
-    fakeBtn.onclick = () => checkAnswer(true); 
-
- 
-
-    gameElements.answerButtons.append(realBtn, fakeBtn); 
-
-} 
-
- 
-
-function displayMalwareQuestion(question) { 
-
-    gameElements.malwareTemplate.classList.remove('hidden'); 
-
-    document.getElementById('scenario-text').textContent = question.scenario; 
-
-    question.answers.forEach((answer, index) => { 
-
-        const btn = document.createElement('button'); 
-
-        btn.textContent = answer; 
-
-        btn.className = 'menu-button w-full bg-teal-500 text-white font-bold py-4 rounded-lg text-xl'; 
-
-        btn.onclick = () => checkAnswer(index); 
-
-        gameElements.answerButtons.appendChild(btn); 
-
-    }); 
-
-} 
-
- 
-
-function displaySocialQuestion(question) { 
-
-    gameElements.socialTemplate.classList.remove('hidden'); 
-
-    const container = document.getElementById('social-scenario'); 
-
-    container.innerHTML = ''; 
-
-    question.scenario.forEach(msg => { 
-
-        const bubble = document.createElement('div'); 
-
-        bubble.textContent = msg.text; 
-
-        bubble.className = 'sms-bubble other'; 
-
-        container.appendChild(bubble); 
-
-    }); 
-
-     
-
-    question.answers.forEach((answer, index) => { 
-
-        const btn = document.createElement('button'); 
-
-        btn.textContent = answer; 
-
-        btn.className = 'menu-button w-full bg-cyan-500 text-white font-bold py-4 rounded-lg text-xl'; 
-
-        btn.onclick = () => checkAnswer(index); 
-
-        gameElements.answerButtons.appendChild(btn); 
-
-    }); 
-
-} 
-
- 
-
-function checkAnswer(userAnswer) { 
-
-    clearInterval(gameState.timerInterval); 
-
-    const timeTaken = (Date.now() - gameState.startTime) / 1000; 
-
-     
-
-    let currentQuestion = gameState.questions[gameState.currentQuestionIndex]; 
-
-    let isCorrect; 
-
-    let explanation; 
-
- 
-
-    if (gameState.mode === 'phishing' || gameState.mode === 'duel' || (gameState.mode === 'masters' && currentQuestion.isFake !== undefined)) { 
-
-        isCorrect = (userAnswer === currentQuestion.isFake); 
-
-        explanation = currentQuestion.explanation; 
-
-    } else { 
-
-        isCorrect = (userAnswer === currentQuestion.correct); 
-
-        explanation = currentQuestion.explanation; 
-
-    } 
-
-     
-
-    Array.from(gameElements.answerButtons.children).forEach(button => button.disabled = true); 
-
-    gameElements.skipBtn.disabled = true; 
-
- 
-
-    gameElements.messageBox.textContent = explanation; 
-
-    gameElements.messageBox.classList.remove('hidden', 'bg-emerald-500', 'bg-rose-500'); 
-
-     
-
-    if (isCorrect) { 
-
-        const points = 100 + (Math.max(0, 45 - Math.floor(timeTaken)) * 10); 
-
-        updateScore(points); 
-
-        gameElements.messageBox.classList.add('bg-emerald-500'); 
-
-        gameState.answeredCorrectly++; 
-
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); 
-
-    } else { 
-
-        updateScore(-50); 
-
-        gameElements.messageBox.classList.add('bg-rose-500'); 
-
-    } 
-
- 
-
-    gameState.totalAnswered++; 
-
-    const questionLimit = gameState.isDuel ? 5 : gameState.questions.length; 
-
-    gameElements.correctCount.textContent = `${gameState.answeredCorrectly} / ${questionLimit}`; 
-
- 
-
-    if (gameState.isDuel) { 
-
-        (gameState.currentPlayer === 1 ? gameState.player1 : gameState.player2).timePerQuestion.push(timeTaken); 
-
-    } else { 
-
-        gameState.timePerQuestion.push(timeTaken); 
-
-    } 
-
- 
-
-    gameElements.nextBtn.classList.remove('hidden'); 
-
-} 
-
- 
-
- 
-
-function updateTimer() { 
-
-    gameState.timer--; 
-
-    gameElements.timer.textContent = gameState.timer; 
-
- 
-
-    if (gameState.timer <= 0) { 
-
-        clearInterval(gameState.timerInterval); 
-
-        gameElements.messageBox.textContent = "Time's up! " + gameState.questions[gameState.currentQuestionIndex].explanation; 
-
-        gameElements.messageBox.classList.remove('hidden', 'bg-emerald-500'); 
-
-        gameElements.messageBox.classList.add('bg-rose-500'); 
-
-        updateScore(-50); 
-
-        Array.from(gameElements.answerButtons.children).forEach(button => button.disabled = true); 
-
-        gameElements.nextBtn.classList.remove('hidden'); 
-
-    } 
-
-} 
-
- 
-
-function updateScore(points) { 
-
-    if (gameState.isDuel) { 
-
-        const playerState = gameState.currentPlayer === 1 ? gameState.player1 : gameState.player2; 
-
-        playerState.score = Math.max(0, playerState.score + points); 
-
-        gameElements.score.textContent = playerState.score; 
-
-    } else { 
-
-        gameState.score = Math.max(0, gameState.score + points); 
-
-        gameElements.score.textContent = gameState.score; 
-
-    } 
-
-} 
-
- 
-
-function handleNextQuestion() { 
-
-    gameState.currentQuestionIndex++; 
-
-    loadQuestion(); 
-
-} 
-
- 
-
-function handleSkip() { 
-
-    if (gameState.skipsRemaining > 0) { 
-
-        gameState.skipsRemaining--; 
-
-        gameElements.skipsRemaining.textContent = gameState.skipsRemaining; 
-
-        clearInterval(gameState.timerInterval); 
-
-        updateScore(-25); 
-
-        handleNextQuestion(); 
-
-    } 
-
-    if (gameState.skipsRemaining <= 0) { 
-
-        gameElements.skipBtn.disabled = true; 
-
-    } 
-
-} 
-
- 
-
-function handleGiveUp() { 
-
-    clearInterval(gameState.timerInterval); 
-
-    showScreen('quitConfirm'); 
-
-} 
-
- 
-
-function confirmQuit() { 
-
-    endGame(true); 
-
-} 
-
- 
-
-function endGame(isQuit = false) { 
-
-    clearInterval(gameState.timerInterval); 
-
-     
-
-    if (gameState.isDuel) { 
-
-        const playerState = gameState.currentPlayer === 1 ? gameState.player1 : gameState.player2; 
-
-        playerState.time = playerState.timePerQuestion.reduce((a, b) => a + b, 0); 
-
-        if (gameState.currentPlayer === 1) { 
-
-            gameState.currentPlayer = 2; 
-
-            showScreen('interstitial'); 
-
-            return; 
-
-        } else { 
-
-            displayDuelResults(); 
-
-        } 
-
-    } else { 
-
-        displaySinglePlayerResults(isQuit); 
-
-    } 
-
-    showScreen('endGame'); 
-
-} 
-
- 
-
-function displaySinglePlayerResults(isQuit) { 
-
-    endGameElements.duelResults.classList.add('hidden'); 
-
-    endGameElements.singlePlayerResults.classList.remove('hidden'); 
-
-     
-
-    const finalScore = isQuit ? 0 : gameState.score; 
-
-    endGameElements.finalScore.textContent = finalScore; 
-
-     
-
-    const totalTime = gameState.timePerQuestion.reduce((a, b) => a + b, 0); 
-
-    const avgTime = gameState.timePerQuestion.length > 0 ? (totalTime / gameState.timePerQuestion.length).toFixed(1) : '0.0'; 
-
-    endGameElements.avgTime.textContent = `${avgTime}s`; 
-
-     
-
-    endGameElements.title.textContent = isQuit ? "Game Over" : "Challenge Complete!"; 
-
- 
-
-    const highScores = JSON.parse(localStorage.getItem('highScores')) || []; 
-
-    const lowestHighScore = highScores.length < 10 ? 0 : highScores[9].score; 
-
- 
-
-    if (!isQuit && finalScore > lowestHighScore) { 
-
-        setTimeout(() => { showScreen('saveScore'); }, 1000); 
-
-    } 
-
-} 
-
- 
-
-function displayDuelResults() { 
-
-    endGameElements.singlePlayerResults.classList.add('hidden'); 
-
-    endGameElements.duelResults.classList.remove('hidden'); 
-
-    endGameElements.title.textContent = "Duel Over!"; 
-
- 
-
-    const p1 = gameState.player1; 
-
-    const p2 = gameState.player2; 
-
-    const p1AvgTime = p1.timePerQuestion.length > 0 ? (p1.time / p1.timePerQuestion.length).toFixed(1) : 0; 
-
-    const p2AvgTime = p2.timePerQuestion.length > 0 ? (p2.time / p2.timePerQuestion.length).toFixed(1) : 0; 
-
-     
-
-    endGameElements.p1FinalScore.textContent = p1.score; 
-
-    endGameElements.p1FinalTime.textContent = p1.time.toFixed(1); 
-
-    endGameElements.p1AvgTime.textContent = `${p1AvgTime}s`; 
-
-     
-
-    endGameElements.p2FinalScore.textContent = p2.score; 
-
-    endGameElements.p2FinalTime.textContent = p2.time.toFixed(1); 
-
-    endGameElements.p2AvgTime.textContent = `${p2AvgTime}s`; 
-
- 
-
-    let winnerText; 
-
-    if (p1.score > p2.score) { 
-
-        winnerText = "Player 1 Wins!"; 
-
-    } else if (p2.score > p1.score) { 
-
-        winnerText = "Player 2 Wins!"; 
-
-    } else { 
-
-        if (p1AvgTime < p2AvgTime) winnerText = "Player 1 Wins on Time!"; 
-
-        else if (p2AvgTime < p1AvgTime) winnerText = "Player 2 Wins on Time!"; 
-
-        else winnerText = "It's a Draw!"; 
-
-    } 
-
-    endGameElements.duelWinner.textContent = winnerText; 
-
-} 
-
- 
-
-// --- LEADERBOARD --- 
-
-function saveScore() { 
-
-    const initials = document.getElementById('initials-input').value.trim().toUpperCase(); 
-
-    if (!initials) return; 
-
- 
-
-    const newScore = { name: initials, score: gameState.score, mode: gameState.mode }; 
-
-    let highScores = JSON.parse(localStorage.getItem('highScores')) || []; 
-
-    highScores.push(newScore); 
-
-    highScores.sort((a, b) => b.score - a.score); 
-
-    highScores.splice(10); 
-
-    localStorage.setItem('highScores', JSON.stringify(highScores)); 
-
-     
-
-    showScreen('endGame'); 
-
-} 
-
- 
-
-function loadLeaderboard() { 
-
-    const highScores = JSON.parse(localStorage.getItem('highScores')) || []; 
-
-    const list = document.getElementById('leaderboard-list'); 
-
-    list.innerHTML = ''; 
-
- 
-
-    if (highScores.length === 0) { 
-
-        list.innerHTML = '<p class="text-center text-slate-500">No scores yet. Be the first!</p>'; 
-
-        return; 
-
-    } 
-
- 
-
-    highScores.forEach((score, index) => { 
-
-        const item = document.createElement('div'); 
-
-        item.className = `flex justify-between items-center p-3 rounded-lg text-lg ${index % 2 === 0 ? 'bg-slate-100' : 'bg-white'}`; 
-
-        const modeText = score.mode.charAt(0).toUpperCase() + score.mode.slice(1); 
-
-        item.innerHTML = ` 
-
-            <span class="font-bold w-2/5">${index + 1}. ${score.name}</span> 
-
-            <span class="text-slate-600 w-1/5 text-center">${modeText}</span> 
-
-            <span class="font-bold text-indigo-600 w-2/5 text-right">${score.score}</span> 
-
-        `; 
-
-        list.appendChild(item); 
-
-    }); 
-
-    showScreen('leaderboard'); 
-
-} 
-
- 
-
-// --- PASSWORD STRENGTH --- 
-
-function checkPasswordStrength() { 
-
-    const password = document.getElementById('password-input').value; 
-
-    const strengthBar = document.getElementById('strength-bar'); 
-
-    const strengthText = document.getElementById('strength-text'); 
-
-    const feedbackList = document.getElementById('strength-feedback'); 
-
-     
-
-    let score = 0; 
-
-    let feedback = []; 
-
- 
-
-    if (password.length >= 8) { score += 25; feedback.push({ text: 'At least 8 characters', met: true }); }  
-
-    else { feedback.push({ text: 'At least 8 characters', met: false }); } 
-
- 
-
-    if (/[A-Z]/.test(password)) { score += 25; feedback.push({ text: 'Contains an uppercase letter', met: true }); } 
-
-    else { feedback.push({ text: 'Contains an uppercase letter', met: false }); } 
-
- 
-
-    if (/[a-z]/.test(password)) { score += 15; } 
-
- 
-
-    if (/\d/.test(password)) { score += 25; feedback.push({ text: 'Contains a number', met: true }); } 
-
-    else { feedback.push({ text: 'Contains a number', met: false }); } 
-
- 
-
-    if (/[^A-Za-z0-9]/.test(password)) { score += 25; feedback.push({ text: 'Contains a special character (!@#$)', met: true }); } 
-
-    else { feedback.push({ text: 'Contains a special character (!@#$)', met: false }); } 
-
- 
-
-    score = Math.min(score, 100); 
-
-    strengthBar.style.width = `${score}%`; 
-
-    strengthBar.className = 'strength-bar h-4 rounded-full'; // reset classes 
-
- 
-
-    if (score < 40) { 
-
-        strengthBar.classList.add('bg-rose-500'); 
-
-        strengthText.textContent = 'Weak'; 
-
-        strengthText.className = 'text-center text-2xl font-bold mt-2 text-rose-500'; 
-
-    } else if (score < 75) { 
-
-        strengthBar.classList.add('bg-amber-500'); 
-
-        strengthText.textContent = 'Medium'; 
-
-        strengthText.className = 'text-center text-2xl font-bold mt-2 text-amber-500'; 
-
-    } else { 
-
-        strengthBar.classList.add('bg-emerald-500'); 
-
-        strengthText.textContent = 'Strong'; 
-
-        strengthText.className = 'text-center text-2xl font-bold mt-2 text-emerald-500'; 
-
-    } 
-
- 
-
-    feedbackList.innerHTML = ''; 
-
-    feedback.forEach(item => { 
-
-        const li = document.createElement('li'); 
-
-        li.className = 'flex items-center text-lg'; 
-
-        const icon = item.met 
-
-            ? `<svg class="w-6 h-6 text-emerald-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>` 
-
-            : `<svg class="w-6 h-6 text-rose-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`; 
-
-        li.innerHTML = `${icon}<span>${item.text}</span>`; 
-
-        feedbackList.appendChild(li); 
-
-    }); 
-
-} 
-
- 
-
- 
-
-// --- EVENT LISTENERS --- 
-
-function init() { 
-
-    screens.standby.onclick = () => showScreen('mainMenu'); 
-
-     
-
-    document.querySelectorAll('.menu-button[data-difficulty]').forEach(btn => { 
-
-        btn.onclick = () => startGame({ mode: 'phishing', difficulty: parseInt(btn.dataset.difficulty) }); 
-
-    }); 
-
-     
-
-    document.getElementById('malware-maze-btn').onclick = () => startGame({ mode: 'malware' }); 
-
-    document.getElementById('social-sleuth-btn').onclick = () => startGame({ mode: 'social' }); 
-
-    document.getElementById('masters-quiz-btn').onclick = () => startGame({ mode: 'masters' }); 
-
-    document.getElementById('duel-mode-btn').onclick = () => startGame({ mode: 'duel', isDuel: true }); 
-
-     
-
-    document.getElementById('leaderboard-btn').onclick = loadLeaderboard; 
-
-    document.getElementById('cyber-safety-btn').onclick = () => showScreen('cyberSafety'); 
-
-    document.getElementById('credits-btn').onclick = () => showScreen('credits'); 
-
-    document.getElementById('password-detector-btn').onclick = () => { 
-
-        checkPasswordStrength(); 
-
-        showScreen('passwordStrength'); 
-
-    }; 
-
- 
-
-    gameElements.nextBtn.onclick = handleNextQuestion; 
-
-    gameElements.skipBtn.onclick = handleSkip; 
-
-    gameElements.giveUpBtn.onclick = handleGiveUp; 
-
- 
-
-    document.getElementById('confirm-quit-btn').onclick = confirmQuit; 
-
-    document.getElementById('keep-playing-btn').onclick = () => { 
-
-        showScreen('game'); 
-
-        gameState.timerInterval = setInterval(updateTimer, 1000); 
-
-    }; 
-
-     
-
-    document.getElementById('save-score-btn').onclick = saveScore; 
-
-    document.getElementById('skip-save-btn').onclick = () => showScreen('endGame'); 
-
-     
-
-    document.getElementById('main-menu-btn').onclick = () => showScreen('mainMenu'); 
-
-    document.getElementById('back-to-menu-btn').onclick = () => showScreen('mainMenu'); 
-
-    document.getElementById('back-to-menu-from-safety-btn').onclick = () => showScreen('mainMenu'); 
-
-    document.getElementById('back-to-menu-from-credits-btn').onclick = () => showScreen('mainMenu'); 
-
-    document.getElementById('back-to-menu-from-password-btn').onclick = () => showScreen('mainMenu'); 
-
- 
-
-    document.getElementById('start-next-turn-btn').onclick = () => { 
-
-        startCountdown(() => { 
-
-            showScreen('game'); 
-
-            startTurn(); 
-
-        }); 
-
-    }; 
-
-     
-
-    document.getElementById('password-input').addEventListener('input', checkPasswordStrength); 
-
- 
-
-    resetGameState(); 
-
-    showScreen('standby'); 
-
-} 
-
- 
-
-init(); 
-
- 
-
-}); 
-
-</script> 
-
- 
-
-</body> 
-
-</html> 
-
- 
-
- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phishing Puzzler</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+   --primary-hue: 220;
+   --secondary-hue: 260;
+   --success-hue: 150;
+   --danger-hue: 350;
+   --warning-hue: 45;
+}
+body {
+   font-family: 'Poppins', 'Inter', sans-serif;
+   background-color: #f1f5f9; /* slate-100 */
+   background-image: radial-gradient(circle at top left, hsl(var(--primary-hue) 90% 95%), transparent 40%),
+                     radial-gradient(circle at bottom right, hsl(var(--secondary-hue) 90% 95%), transparent 50%);
+   min-height: 100vh;
+}
+.main-container {
+   background-color: rgba(255, 255, 255, 0.7);
+   backdrop-filter: blur(12px);
+   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.email-body a, .scenario-body a {
+   text-decoration: underline;
+   color: hsl(var(--primary-hue) 80% 60%);
+   font-weight: 600;
+}
+.email-body a:hover, .scenario-body a:hover {
+   color: hsl(var(--primary-hue) 80% 50%);
+}
+.menu-button {
+   transition: all 0.2s ease-in-out;
+   border: 1px solid transparent;
+}
+.menu-button:hover {
+   transform: translateY(-4px) scale(1.02);
+   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+   filter: brightness(1.05);
+}
+.menu-button:active {
+   transform: translateY(-1px) scale(0.98);
+}
+/* Full-screen overlays */
+#countdown-overlay, #quit-confirm-overlay, #standby-screen, #save-score-overlay, #cyber-safety-screen, #password-strength-screen, #credits-screen, #leaderboard-screen, #interstitial-screen, #end-game-screen {
+   position: absolute;
+   top: 0;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   background-color: rgba(241, 245, 249, 0.8); /* slate-100 */
+   backdrop-filter: blur(8px);
+   z-index: 50;
+   overflow-y: auto;
+   padding: 1rem;
+}
+.standby-text {
+   animation: pulse 2s infinite;
+}
+@keyframes pulse {
+   0%, 100% { opacity: 1; transform: scale(1); }
+   50% { opacity: 0.7; transform: scale(1.05); }
+}
+.strength-bar {
+   transition: all 0.3s ease-in-out;
+}
+.sms-bubble {
+   max-width: 75%;
+   padding: 12px 20px;
+   border-radius: 20px;
+   margin-bottom: 8px;
+   word-wrap: break-word;
+   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.sms-bubble.other {
+   background-color: #ffffff;
+   color: #1f2937; /* gray-800 */
+   align-self: flex-start;
+   border-bottom-left-radius: 4px;
+}
+.stat-card {
+   background-color: rgba(255, 255, 255, 0.6);
+   border: 1px solid rgba(0, 0, 0, 0.05);
+   padding: 0.5rem 1rem;
+   border-radius: 0.75rem;
+}
+</style>
+</head>
+<body class="bg-slate-100 p-4 sm:p-6 md:p-8">
+<div class="main-container w-full max-w-7xl mx-auto min-h-[90vh] shadow-2xl rounded-2xl relative p-6 md:p-8">
+<!-- Standby Screen -->
+<div id="standby-screen" class="flex flex-col items-center justify-center rounded-2xl text-center">
+<h1 class="text-4xl md:text-6xl font-bold text-slate-800 mb-4">Welcome to Cyber Savers!</h1>
+<p class="text-lg md:text-xl text-slate-600 max-w-3xl mb-12">
+       Test your skills, spot the scams, and become a cybersecurity expert. Choose a mode below to begin your training!
+</p>
+<p class="standby-text text-2xl font-semibold text-indigo-600">Tap anywhere to start</p>
+</div>
+<!-- Countdown Overlay -->
+<div id="countdown-overlay" class="hidden items-center justify-center rounded-2xl">
+<div id="countdown-text" class="text-9xl font-bold text-indigo-600 drop-shadow-lg">3</div>
+</div>
+<!-- Save Score Modal -->
+<div id="save-score-overlay" class="hidden items-center justify-center rounded-2xl">
+<div class="bg-white p-8 rounded-xl shadow-2xl text-center border">
+<h2 class="text-3xl font-bold text-slate-800 mb-4">High Score!</h2>
+<p class="text-slate-600 mb-6">Enter your name to save your score on the leaderboard.</p>
+<input type="text" id="initials-input" maxlength="10" class="text-center text-2xl font-bold w-full max-w-xs p-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200">
+<div class="flex justify-center gap-4 mt-6">
+<button id="save-score-btn" class="menu-button bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-lg">Save Score</button>
+<button id="skip-save-btn" class="menu-button bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold py-3 px-8 rounded-lg">Don't Save</button>
+</div>
+</div>
+</div>
+<!-- Quit Confirmation Modal -->
+<div id="quit-confirm-overlay" class="hidden items-center justify-center rounded-2xl">
+<div class="bg-white p-8 rounded-xl shadow-2xl text-center border">
+<h2 class="text-3xl font-bold text-slate-800 mb-4">Are you sure?</h2>
+<p class="text-slate-600 mb-8">Do you want to quit the current game?</p>
+<div class="flex justify-center gap-4">
+<button id="confirm-quit-btn" class="menu-button bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-8 rounded-lg">Confirm Quit</button>
+<button id="keep-playing-btn" class="menu-button bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold py-3 px-8 rounded-lg">Keep Playing</button>
+</div>
+</div>
+</div>
+<!-- Main Menu -->
+<div id="main-menu" class="hidden">
+<h1 class="text-5xl font-bold text-center text-slate-800 mb-2">Phishing Puzzler</h1>
+<p class="text-center text-slate-600 text-lg mb-10">Select a game mode!</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+<div class="space-y-4 p-6 bg-slate-100/50 rounded-xl border">
+<h2 class="text-2xl font-bold text-center text-slate-700">Single Player</h2>
+<button data-difficulty="1" class="menu-button w-full bg-emerald-500 text-white font-bold py-4 rounded-lg text-xl">Easy</button>
+<button data-difficulty="2" class="menu-button w-full bg-amber-500 text-white font-bold py-4 rounded-lg text-xl">Medium</button>
+<button data-difficulty="3" class="menu-button w-full bg-rose-500 text-white font-bold py-4 rounded-lg text-xl">Hard</button>
+</div>
+<div class="space-y-4 p-6 bg-slate-100/50 rounded-xl border">
+<h2 class="text-2xl font-bold text-center text-slate-700">Special Modes</h2>
+<button id="malware-maze-btn" class="menu-button w-full bg-teal-500 text-white font-bold py-4 rounded-lg text-xl">Malware Maze</button>
+<button id="social-sleuth-btn" class="menu-button w-full bg-cyan-500 text-white font-bold py-4 rounded-lg text-xl">Social Sleuth</button>
+<button id="masters-quiz-btn" class="menu-button w-full bg-slate-800 text-white font-bold py-4 rounded-lg text-xl">Masters Quiz</button>
+</div>
+</div>
+<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+<button id="duel-mode-btn" class="menu-button w-full bg-purple-600 text-white font-bold py-4 rounded-lg text-xl">2-Player Duel</button>
+<button id="password-detector-btn" class="menu-button w-full bg-indigo-500 text-white font-bold py-4 rounded-lg text-xl">Password Strength Detector</button>
+</div>
+<div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4">
+<button id="leaderboard-btn" class="menu-button w-full bg-slate-700 text-white font-bold py-3 rounded-lg text-lg">Leaderboard</button>
+<button id="cyber-safety-btn" class="menu-button w-full bg-blue-500 text-white font-bold py-3 rounded-lg text-lg">Cyber Safety Info</button>
+<button id="credits-btn" class="menu-button w-full bg-slate-500 text-white font-bold py-3 rounded-lg text-lg">Credits</button>
+</div>
+</div>
+<!-- Credits Screen -->
+<div id="credits-screen" class="hidden text-center p-8 flex flex-col items-center justify-center">
+<h1 class="text-4xl font-bold text-slate-800 mb-6">Credits</h1>
+<div class="space-y-4 text-slate-700 text-xl max-w-lg bg-white/80 p-8 rounded-xl border">
+<div>
+<h2 class="text-2xl font-bold text-slate-800 mb-2">Researched By:</h2>
+<p>John Fennell</p>
+<p>Nash Mutukisna</p>
+<p>Oscar Steele</p>
+</div>
+<div class="pt-4">
+<p class="text-lg">This game was created with the assistance of AI.</p>
+</div>
+</div><div class="mt-8">
+<button id="back-to-menu-from-credits-btn" class="menu-button bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg text-xl">Back to Main Menu</button>
+</div>
+</div>
+<!-- Password Strength Screen -->
+<div id="password-strength-screen" class="hidden text-left p-8">
+<h1 class="text-4xl font-bold text-slate-800 mb-6 text-center">Password Strength Detector</h1>
+<div class="max-w-md mx-auto bg-white/80 p-8 rounded-xl border">
+<p class="text-center text-slate-600 mb-4">Type a password to see how strong it is. (Don't use a real password!)</p>
+<input type="text" id="password-input" class="w-full p-3 border-2 border-slate-300 rounded-lg text-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200" placeholder="Type a password...">
+<div class="w-full bg-slate-200 rounded-full h-4 mt-4 overflow-hidden">
+<div id="strength-bar" class="strength-bar h-4 rounded-full" style="width: 0%;"></div>
+</div>
+<p id="strength-text" class="text-center text-2xl font-bold mt-2"></p>
+<ul id="strength-feedback" class="mt-4 space-y-2">
+<!-- Feedback items will be added here -->
+</ul>
+</div>
+<div class="mt-8 text-center">
+<button id="back-to-menu-from-password-btn" class="menu-button bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg text-xl">Back to Main Menu</button></div>
+</div>
+<!-- Cyber Safety Screen -->
+<div id="cyber-safety-screen" class="hidden text-left p-8">
+<h1 class="text-4xl font-bold text-slate-800 mb-6 text-center">Cyber Safety Information</h1>
+<div class="space-y-6 text-slate-700 max-w-4xl mx-auto bg-white/80 p-8 rounded-xl border">
+<div>
+<h2 class="text-2xl font-bold text-slate-800 mb-2">What is a Cyber Attack?</h2>
+<p>A cyber attack is when someone tries to harm a computer system or steal data. This can happen in many ways, like through viruses or malware. The amount of malware has been increasing a lot every year, as seen in data from 2008 to 2024. The main targets for these attacks are often large sectors like manufacturing, finance, and healthcare.</p>
+</div>
+<div>
+<h2 class="text-2xl font-bold text-slate-800 mb-2">Understanding Hackers</h2>
+<p>A hacker is someone who uses their computer skills to get into digital systems.</p>
+<ul class="list-disc list-inside ml-4 mt-2 space-y-1">
+<li><strong>White Hat Hackers:</strong> These are the "good guys." They find security problems so that companies can fix them.</li>
+<li><strong>Black Hat Hackers:</strong> These are the "bad guys." They break into systems to steal data or cause damage.</li>
+<li><strong>Gray Hat Hackers:</strong> These hackers are in the middle. They might break into a system without permission but won't cause harm and might tell the owner about the problem.</li>
+</ul><p class="mt-2">Hackers do this for different reasons, like for money, to cause trouble, or just for the challenge.</p>
+</div>
+<div>
+<h2 class="text-2xl font-bold text-slate-800 mb-2">What is Malware?</h2>
+<p>Malware is software created for malicious purposes. The first computer virus, Creeper, was made by Bob Thomas. The term "computer virus" was first used by Fred Cohen in 1983.</p>
+</div>
+<div>
+<h2 class="text-2xl font-bold text-slate-800 mb-2">The Impact of Data Breaches: The Optus Case</h2>
+<p>In September 2022, Optus, a large Australian company, had a major cyber attack. A hacker was able to get the personal information of millions of customers, including names, birthdays, phone numbers, and even driver's licenses. This happened because of a security weakness.</p>
+<p class="mt-2">The effects on people were serious. For example, one person named Nicole had her identity stolen, including her driver's license. The hacker was even found driving a car with a matching number plate from a parking fine sent to her. This shows that cyber attacks can lead to long-term problems like identity theft.</p>
+</div>
+<div>
+<h2 class="text-2xl font-bold text-slate-800 mb-2">Understanding Identity Theft</h2>
+<p>Identity theft is when someone uses your personal information without permission, usually for financial gain or to pretend to be you. Scammers might try to get your personal details, bank account numbers, or passwords. According to Scamwatch, there have been over 601,000 scam reports in the last 5 years.</p><p class="mt-2">In 2023, investment scams were the type of scam that caused the biggest financial losses. People aged 60 and over are often the main targets for identity theft criminals.</p>
+</div>
+<div>
+<h2 class="text-2xl font-bold text-slate-800 mb-2">The Rise of AI in Scams</h2>
+<p>Criminals are now using Artificial Intelligence (AI) to make their scams more believable. They can use AI to create 'deepfake' videos or clone a person's voice to trick people. AI can also be used to create fake blackmail material or to analyze data to find security weaknesses in systems. However, AI also has positive effects, helping companies to better detect and respond to attacks.</p>
+</div>
+<div>
+<h2 class="text-2xl font-bold text-slate-800 mb-2">Real-World Scam Examples: Bushfire Scams</h2>
+<p>During the 2019 bushfires in Australia, scammers took advantage of people's generosity. They created fake charities and donation websites to steal money from people who were trying to help. This shows that scammers often use real-world events to make their tricks seem more legitimate.</p>
+</div>
+<div>
+<h2 class="text-2xl font-bold text-slate-800 mb-2">How to Stay Safe from Scams</h2>
+<p>In 2024, Australians lost over $2 billion to scams. Scammers try to trick you with things like fake emails and phone calls to get your money or personal info. You can protect yourself with these 3 simple steps:</p>
+<ul class="list-decimal list-inside ml-4 mt-2 space-y-1 font-semibold"><li><strong>STOP:</strong> Don't give money or information to anyone if you're not sure.</li>
+<li><strong>CHECK:</strong> Make sure the person or company you are dealing with is real.</li>
+<li><strong>PROTECT:</strong> Act quickly if something doesn't feel right.</li>
+</ul>
+<p class="mt-2">You can also use tools like strong passwords and multi-factor authentication to secure your accounts. The Australian government and organizations like ID Care and the eSafety Commission provide resources and support to help people stay safe online.</p>
+</div>
+</div>
+<div class="mt-8 text-center">
+<button id="back-to-menu-from-safety-btn" class="menu-button bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg text-xl">Back to Main Menu</button>
+</div>
+</div>
+<!-- Leaderboard Screen -->
+<div id="leaderboard-screen" class="hidden text-center p-8">
+<h1 class="text-4xl font-bold text-slate-800 mb-6">Top Scores</h1>
+<div id="leaderboard-list" class="space-y-2 text-left max-w-lg mx-auto mb-6 bg-white/80 p-6 rounded-xl border">
+<!-- Scores will be dynamically inserted here -->
+</div>
+<button id="back-to-menu-btn" class="menu-button bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg text-xl">Main Menu</button>
+</div>
+<!-- Game Container -->
+<div id="game-container" class="hidden">
+<header class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-slate-200 pb-4 gap-4">
+<div class="flex items-center gap-4">
+<button id="give-up-btn" class="menu-button bg-rose-500 text-white font-bold py-2 px-4 rounded-lg text-sm">Give Up</button>
+<button id="skip-btn" class="menu-button bg-amber-500 text-white font-bold py-2 px-4 rounded-lg text-sm">Skip (<span id="skips-remaining">3</span>)</button>
+</div>
+<h1 id="game-title" class="text-3xl font-bold text-slate-800 order-first md:order-none">Phishing Puzzler</h1>
+<div class="flex items-center space-x-2 sm:space-x-4 mt-4 md:mt-0">
+<div class="stat-card text-center">
+<div class="text-sm font-semibold text-slate-700">Score</div>
+<div id="score" class="text-2xl font-bold text-indigo-600">0</div>
+</div>
+<div class="stat-card text-center">
+<div class="text-sm font-semibold text-slate-700">Timer</div>
+<div id="timer" class="text-2xl font-bold text-slate-800">45</div>
+</div>
+<div class="stat-card text-center">
+<div class="text-sm font-semibold text-slate-700">Correct</div>
+<div id="correct-count" class="text-2xl font-bold text-emerald-600">0 / 0</div>
+</div>
+<div class="stat-card text-center">
+<div id="difficulty-display" class="text-sm font-semibold text-slate-700">Difficulty</div>
+<div id="level" class="text-2xl font-bold text-slate-600"></div>
+</div>
+</div>
+</header>
+<main>
+<div id="duel-turn-display" class="text-center text-2xl font-bold text-purple-600 mb-4 hidden"></div>
+<div id="content-container" class="bg-slate-800 border border-slate-700 rounded-lg p-6 mb-6 min-h-[300px] text-slate-200 shadow-inner">
+<div id="email-template" class="hidden">
+<div class="flex justify-between items-center mb-4 border-b border-slate-600 pb-3">
+<div>
+<p class="font-bold text-lg text-slate-100" id="email-sender"></p>
+<p class="text-sm text-slate-400" id="email-subject"></p>
+</div>
+<p class="text-sm text-slate-400" id="email-date"></p>
+</div>
+<div class="email-body leading-relaxed" id="email-body"></div>
+</div>
+<div id="malware-template" class="hidden">
+<p class="text-xl font-semibold text-slate-100 mb-4" id="scenario-text"></p>
+</div>
+<div id="social-template" class="hidden">
+<div class="flex flex-col items-start space-y-2 p-4 bg-slate-200 rounded-lg" id="social-scenario">
+<!-- SMS bubbles will be inserted here -->
+</div>
+</div>
+</div>
+<div id="message-box" class="text-center p-4 mb-4 rounded-lg text-white font-semibold hidden"></div>
+<div id="answer-buttons" class="grid grid-cols-1 sm:grid-cols-2 justify-center items-center gap-4"></div>
+<div class="text-center mt-6">
+<button id="next-btn" class="hidden menu-button bg-indigo-500 text-white font-bold py-3 px-8 rounded-lg">Next Question</button>
+</div>
+</main>
+</div>
+<!-- Interstitial Screen for Duels -->
+<div id="interstitial-screen" class="hidden flex-col items-center justify-center text-center p-8">
+<h1 id="interstitial-title" class="text-4xl font-bold text-slate-800 mb-4">Player 1 Finished!</h1>
+<p class="text-2xl text-slate-600 mb-8">Ready Player 2? Your turn starts now!</p>
+<button id="start-next-turn-btn" class="menu-button bg-purple-600 text-white font-bold py-3 px-8 rounded-lg text-xl">Start Player 2's Turn</button>
+</div>
+<!-- End Game Screen -->
+<div id="end-game-screen" class="hidden flex-col items-center justify-center text-center p-8">
+<div class="bg-white/80 p-8 rounded-xl border shadow-xl">
+<h1 id="end-game-title" class="text-4xl font-bold text-slate-800 mb-4">Challenge Over!</h1>
+<div id="single-player-results">
+<p class="text-2xl text-slate-600 mb-2">Your Final Score:</p>
+<p id="final-score" class="text-7xl font-bold text-indigo-600 mb-6">0</p>
+<p class="text-xl text-slate-600 mb-4">Average Time: <span id="avg-time" class="font-semibold">0.0s</span></p>
+</div>
+<div id="duel-results" class="hidden">
+<p id="duel-winner" class="text-3xl font-bold text-emerald-600 mb-6"></p>
+<div class="flex flex-col sm:flex-row justify-around items-center text-left w-full max-w-2xl gap-8">
+<div class="p-4 rounded-lg bg-blue-50 border-blue-200 border w-full">
+<h2 class="text-2xl font-bold text-blue-600">Player 1</h2>
+<p class="text-xl">Score: <span id="p1-final-score" class="font-semibold"></span></p>
+<p class="text-xl">Time: <span id="p1-final-time" class="font-semibold"></span>s</p>
+<p class="text-xl">Avg Time: <span id="p1-avg-time" class="font-semibold"></span>s</p>
+</div>
+<div class="p-4 rounded-lg bg-rose-50 border-rose-200 border w-full">
+<h2 class="text-2xl font-bold text-rose-600">Player 2</h2>
+<p class="text-xl">Score: <span id="p2-final-score" class="font-semibold"></span></p>
+<p class="text-xl">Time: <span id="p2-final-time" class="font-semibold"></span>s</p>
+<p class="text-xl">Avg Time: <span id="p2-avg-time" class="font-semibold"></span>s</p>
+</div>
+</div>
+</div>
+<div class="flex justify-center items-center gap-4 mt-8">
+<button id="main-menu-btn" class="menu-button bg-indigo-500 text-white font-bold py-3 px-8 rounded-lg text-xl">Main Menu</button>
+<button id="play-again-btn" class="hidden menu-button bg-emerald-500 text-white font-bold py-3 px-8 rounded-lg text-xl">Play Again</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+// --- CONTENT DATABASE ---
+const allContent = {
+   phishing: {
+       singlePlayer: [
+           // Level 1
+           { level: 1, sender: 'Amaz0n Support <support@amaz0n-prime-deals.com>', subject: 'Yor account has ben limited!', body: `<p>Dear Customer,</p><p>We noticed some unusual activity on your account. For your safety, we have limited your account.</p><p>Please click here to verify your details: <a href="#" onclick="return false;">Verify Now</a></p><p>Thank you for your cooperation.</p>`, isFake: true, explanation: 'This email is fake. Notice the misspellings ("Yor", "ben"), the unusual sender email ("Amaz0n" with a zero), and the suspicious link.' },
+           { level: 1, sender: 'Netflix <info@service.netflix.com>', subject: 'New sign-in to your account', body: `<p>Hi there,</p><p>There was a new sign-in to your account from a new device. If this was you, you can ignore this email.</p><p>If this wasn't you, please review your account activity.</p><p>Thanks,<br>The Netflix Team</p>`, isFake: false, explanation: 'This is a legitimate security notification from Netflix. The sender address is correct and there are no suspicious links or urgent demands.' },
+           { level: 1, sender: 'Your Bank <security@your-bank-online.co>', subject: 'Urgent: Action Required on your Account', body: `<p>Hello,</p><p>We have detected a suspicious login attempt. Please confirm your identity immediately by clicking the link below.</p><p><a href="#" onclick="return false;">Secure Login</a></p>`, isFake: true, explanation: 'This is fake. Banks usually don\'t ask you to log in from a link in an email. The sender\'s address looks slightly off.' },
+           { level: 1, sender: 'Social Media <friends@face-book-alerts.net>', subject: 'You have a new freind request!', body: `<p>Hi,</p><p>Someone wants to be your freind! Click to accept.</p><p><a href="#" onclick="return false;">See Request</a></p>`, isFake: true, explanation: 'This is fake. Notice the misspelling of "friend" and the unofficial sender address.' },
+           { level: 1, sender: 'Local Library <noreply@locallibrary.org>', subject: 'Your book is due soon', body: `<p>Dear Patron,</p><p>This is a friendly reminder that your book, "The Mystery of the Clockwork Sparrow", is due in 3 days.</p><p>Thank you!</p>`, isFake: false, explanation: 'This is a legitimate reminder. The email address is plausible and it doesn\'t ask for any personal information.' },
+           { level: 1, sender: 'WINNER!!! <prize@freelottery.win>', subject: 'CONGRATULATIONS YOU HAVE WON!!!', body: `<p>YOU ARE THE LUCKY WINNER OF $1,000,000!!!</p><p>To claim your prize, send us your bank details and a small processing fee of $100.</p>`, isFake: true, explanation: 'This is a classic fake email. Legitimate lotteries don\'t ask for a fee to claim a prize.' },
+           { level: 1, sender: 'School Principal <principal@myschool.edu>', subject: 'Important: School Closure', body: `<p>Dear Parents,</p><p>Due to a water main break, the school will be closed tomorrow. Please check the school website for updates.</p>`, isFake: false, explanation: 'This looks like a legitimate announcement. It directs you to the official school website instead of a suspicious link.' },
+           { level: 1, sender: 'Parcel Delivery <track@fedex-express-shipping.com>', subject: 'Your pacage is waiting', body: `<p>We could not deliver your pacage. Please click here to reschedule.</p><p><a href="#" onclick="return false;">Reschedule Delivery</a></p>`, isFake: true, explanation: 'This is fake. Notice the misspelling of "package" and the unofficial sender address.' },
+           { level: 1, sender: 'Gaming Store <deals@steam-powered.com>', subject: 'Your weekly deals are here!', body: `<p>Hi Gamer,</p><p>Check out the latest deals on great games this week!</p><p>Happy Gaming!</p>`, isFake: false, explanation: 'This is a legitimate promotional email. The sender address is correct and it just directs you to their store.' },
+           // Level 2
+           { level: 2, sender: 'Google <no-reply@google-security-alerts.com>', subject: 'Security alert for your linked Google Account', body: `<p>Your password was changed.</p><p>If you didn't change your password, your account might have been hijacked. To get back into your account, you'll need to reset your password.</p><p><a href="#" onclick="return false;">Reset Password</a></p><p>The Google Accounts team</p>`, isFake: true, explanation: 'This email is fake. While it looks convincing, the link would go to a non-Google domain. Always hover over links to check the destination.' },
+           { level: 2, sender: 'PayPal <service@paypal.com>', subject: 'Receipt for your payment to Spotify', body: `<p>Hello,</p><p>You sent a payment of $10.99 AUD to Spotify AB.</p><p>If you did not make this payment, you can cancel it by logging into your account on the official PayPal website.</p><p>Thanks for using PayPal.</p>`, isFake: false, explanation: 'This is a legitimate receipt. The sender is correct, and it doesn\'t ask you to click a link to fix a problem, but rather to log in to the official site yourself.' },
+           { level: 2, sender: 'Dropbox <no-reply@dropboxmail.com>', subject: 'Your Dropbox is almost full', body: `<p>Hi,</p><p>Your Dropbox is running out of space! Upgrade now to get more storage.</p><p>You are currently using 95% of your 2 GB quota.</p><p><a href="#" onclick="return false;">Upgrade your plan now!</a></p>`, isFake: true, explanation: 'This is a fake email. The link would point to a non-official Dropbox domain. Always go directly to the official website to manage your account.' },
+           { level: 2, sender: 'Amazon <orders@amazon.com>', subject: 'Your order #123-4567890 has shipped', body: `<p>Hello,</p><p>We're happy to let you know that your order has shipped. You can track your package on our website.</p>`, isFake: false, explanation: 'This is a legitimate shipping confirmation. The sender address is official and it directs you to the real website.' },
+           { level: 2, sender: 'Microsoft <account-update@microsoft-support.net>', subject: 'Unusual sign-in activity', body: `<p>Dear user,</p><p>We detected a sign-in from a new location. If this was not you, please secure your account immediately.</p><p><a href="#" onclick="return false;">Secure Your Account</a></p>`, isFake: true, explanation: 'This is fake. The sender domain "microsoft-support.net" is not an official Microsoft domain.' },
+           { level: 2, sender: 'Your Phone Company <billing@telstra.com.au>', subject: 'Your latest bill is now available', body: `<p>Hi,</p><p>Your monthly bill is ready to view. Please log in to your account to see the details.</p>`, isFake: false, explanation: 'This is a legitimate bill notification. It asks you to log in to your account yourself, which is safe.' },
+           { level: 2, sender: 'Facebook <notification@facebook.com>', subject: 'You have a new memory to look back on', body: `<p>We thought you'd like to look back on this post from 5 years ago.</p><p>We hope you enjoy this memory.</p>`, isFake: false, explanation: 'This is a legitimate notification from Facebook. The sender address is correct.' },
+           { level: 2, sender: 'Australian Tax Office <mygov@ato-gov.online>', subject: 'You are eligible for a tax refund', body: `<p>Dear Citizen,</p><p>You are due a tax refund of $450.25. Please click the link below and enter your details to receive your refund.</p><p><a href="#" onclick="return false;">Claim Refund</a></p>`, isFake: true, explanation: 'This is fake. The tax office will never send you a link to claim a refund. The domain "ato-gov.online" is also fake.' },
+           { level: 2, sender: 'LinkedIn <jobs-noreply@linkedin.com>', subject: 'You appeared in 4 searches this week', body: `<p>Hi,</p><p>See who's searching for you. Your profile is getting attention!</p>`, isFake: false, explanation: 'This is a legitimate notification from LinkedIn designed to get you to use their service.' },
+            // Level 3
+           { level: 3, sender: 'Apple Support <support@apple.com>', subject: 'RE: Your recent inquiry [Case #1928374]', body: `<p>Dear Customer,</p><p>Thank you for contacting Apple Support. We have an update regarding your case.</p><p>To view the secure message, please download the attached document and open it using your account password.</p><p>Sincerely,<br>Apple Support</p>`, isFake: true, explanation: 'This is a fake email. Legitimate companies will almost never send updates in a password-protected attachment. This is a common tactic to deliver malware.' },
+           { level: 3, sender: 'Microsoft Account Team <account-security-noreply@accountprotection.microsoft.com>', subject: 'Microsoft account unusual sign-in activity', body: `<p>We detected something unusual about a recent sign-in to the Microsoft account li*****@hotmail.com.</p><p>To help keep you safe, we've blocked access to your inbox. Please review the recent activity and we'll help you take corrective action.</p>`, isFake: false, explanation: 'This is a legitimate security alert from Microsoft. The sender email is an official Microsoft domain.' },
+           { level: 3, sender: 'Your HR Department <hr@internal-company-email.com>', subject: 'Important: Annual Performance Review Documents', body: `<p>Hello Team,</p><p>Please find the documents for your annual performance review attached. Please review them before our scheduled meeting tomorrow.</p><p>Regards,<br>HR Department</p>`, isFake: true, explanation: 'This is a spear phishing attempt. It uses urgency ("meeting tomorrow") and seems to come from an internal source. The danger lies in the attachment which could contain malware.' },
+           { level: 3, sender: 'IT Help Desk <it-support@company.com>', subject: 'Action Required: Your password expires in 24 hours', body: `<p>All employees are required to update their passwords as part of our new security policy. Please click the link below to update your password immediately.</p><p><a href="#" onclick="return false;">Update Password</a></p><p>Failure to do so will result in your account being locked.</p>`, isFake: true, explanation: 'This is a very common phishing tactic. The urgency and threat of being locked out are designed to make you act without thinking. The link would lead to a fake login page to steal your credentials.' },
+           { level: 3, sender: 'GitHub <noreply@github.com>', subject: '[GitHub] A third-party OAuth application has been added to your account', body: `<p>An OAuth application, "Helpful-Tools", was recently authorized to access your account.</p><p>If you did not authorize this application, you should immediately revoke its access and change your password.</p><p>You can review your authorized applications in your security settings.</p>`, isFake: false, explanation: 'This is a legitimate security notification from GitHub. The sender address is correct, and it advises you to take action by navigating to the website yourself, which is a safe practice.' }
+       ]
+   },
+   malware: [
+       { text: "You're trying to download a free movie from a website called 'freemovies4u.biz'. The download button is large and flashy, but there are several smaller links around it. The main button downloads a file called 'movie_installer.exe'. Is it safe to run this file?", options: ["Yes, it's just the movie installer.", "No, it's likely malware."], answer: "No, it's likely malware.", explanation: "Files ending in .exe from untrusted sources are a huge red flag. They often install malware or adware instead of the content you want. The suspicious domain name is another clue." },
+       { text: "You receive an email from a colleague with a PowerPoint file attached named 'Q3_Report.pptx'. The email body just says 'Check this out'. You weren't expecting this report. What should you do?", options: ["Open it, it's from a colleague.", "Contact your colleague through another channel (like chat or phone) to verify they sent it."], answer: "Contact your colleague through another channel (like chat or phone) to verify they sent it.", explanation: "Even if an email is from a known contact, their account could be compromised. An unexpected attachment with a vague message is suspicious. Always verify before opening." },
+       { text: "Your browser shows a pop-up saying 'Your computer is infected with 5 viruses! Click here to scan and remove them NOW!'. It looks like a system alert.", options: ["Click the pop-up to fix the problem.", "Close the browser tab immediately."], answer: "Close the browser tab immediately.", explanation: "This is a classic scareware tactic. These fake alerts trick you into clicking and downloading actual malware. Your browser cannot scan your computer for viruses." },
+       { text: "You find a USB stick in the parking lot. What is the safest thing to do?", options: ["Plug it into your computer to see who it belongs to.", "Leave it where it is or give it to building security."], answer: "Leave it where it is or give it to building security.", explanation: "Found USB sticks are a known method for hackers to introduce malware into a secure environment. Never plug an unknown USB drive into your computer." }
+   ],
+   social: [
+       { scenario: [{ from: 'other', text: "Hi, it's your bank. We've detected suspicious activity on your account. Please reply with your full name and date of birth to verify your identity." }], options: ["Provide the information.", "Do not reply and block the number."], answer: "Do not reply and block the number.", explanation: "This is smishing (SMS phishing). Your bank will never ask for sensitive personal information via a text message." },
+       { scenario: [{ from: 'other', text: "Hey it's Mum. My phone fell in the water and this is my temporary number. I need to pay a bill urgently but can't access my banking app. Can you please transfer $500 to this account? I'll pay you back tomorrow. BSB: 123-456 Acc: 98765432" }], options: ["Transfer the money, it's an emergency.", "Call your mum on her original number to verify."], answer: "Call your mum on her original number to verify.", explanation: "This is a very common 'Hi Mum' scam. Scammers pretend to be a family member in trouble to trick you into sending money. Always verify through a different communication channel." },
+       { scenario: [{ from: 'other', text: "Australia Post: Your package has been held at our depot due to an unpaid shipping fee. Please follow the link to pay and reschedule delivery: auspost-tracking-reschedule.com" }], options: ["Pay the fee to get your package.", "Ignore the message and check official tracking."], answer: "Ignore the message and check official tracking.", explanation: "Delivery scams are very common. The link is not the official Australia Post website. Always track your packages through the official site or app, never through links in unexpected texts." }
+   ],
+   masters: [
+       { question: "What does 'DDoS' stand for?", answers: ["Distributed Denial of Service", "Data Destruction on Site", "Digital Deletion of Software", "Directed Denial of Security"], correct: 0, explanation: "DDoS stands for Distributed Denial of Service, which is an attack that overwhelms a server with traffic, making it unavailable to users." },
+       { question: "Which of these is NOT a type of malware?", answers: ["Virus", "Trojan", "Firewall", "Ransomware"], correct: 2, explanation: "A Firewall is a security device that monitors and filters network traffic to block malicious activity. The others are all types of malicious software (malware)." },
+       { question: "What is 'Two-Factor Authentication' (2FA)?", answers: ["Using two different passwords.", "A password and a second piece of information (like a code from your phone).", "Logging in from two different devices.", "A security question."], correct: 1, explanation: "2FA adds a second layer of security to your accounts. After entering your password, you need to provide a second factor, typically a code from a trusted device, to prove it's really you." },
+       { question: "What is the main purpose of a 'VPN'?", answers: ["To speed up your internet.", "To scan for viruses.", "To encrypt your internet connection and hide your IP address.", "To block ads."], correct: 2, explanation: "A VPN (Virtual Private Network) creates a secure, encrypted tunnel for your internet traffic, enhancing your privacy and security by masking your online activities and location." }
+   ]
+};
+// --- DOM ELEMENTS ---
+const standbyScreen = document.getElementById('standby-screen');
+const mainMenu = document.getElementById('main-menu');
+const gameContainer = document.getElementById('game-container');
+const countdownOverlay = document.getElementById('countdown-overlay');
+const countdownText = document.getElementById('countdown-text');
+const quitConfirmOverlay = document.getElementById('quit-confirm-overlay');
+const saveScoreOverlay = document.getElementById('save-score-overlay');
+const endGameScreen = document.getElementById('end-game-screen');
+const cyberSafetyScreen = document.getElementById('cyber-safety-screen');
+const passwordStrengthScreen = document.getElementById('password-strength-screen');
+const creditsScreen = document.getElementById('credits-screen');
+const leaderboardScreen = document.getElementById('leaderboard-screen');
+const interstitialScreen = document.getElementById('interstitial-screen');
+const contentContainer = document.getElementById('content-container');
+const emailTemplate = document.getElementById('email-template');
+const malwareTemplate = document.getElementById('malware-template');
+const socialTemplate = document.getElementById('social-template');
+const answerButtons = document.getElementById('answer-buttons');
+const messageBox = document.getElementById('message-box');
+const nextBtn = document.getElementById('next-btn');
+const giveUpBtn = document.getElementById('give-up-btn');
+const skipBtn = document.getElementById('skip-btn');
+const scoreEl = document.getElementById('score');
+const timerEl = document.getElementById('timer');
+const correctCountEl = document.getElementById('correct-count');
+const levelEl = document.getElementById('level');
+const skipsRemainingEl = document.getElementById('skips-remaining');
+const gameTitleEl = document.getElementById('game-title');
+const finalScoreEl = document.getElementById('final-score');
+const avgTimeEl = document.getElementById('avg-time');
+const leaderboardListEl = document.getElementById('leaderboard-list');
+const passwordInput = document.getElementById('password-input');
+const strengthBar = document.getElementById('strength-bar');
+const strengthText = document.getElementById('strength-text');
+const strengthFeedback = document.getElementById('strength-feedback');
+// Duel Elements
+const duelTurnDisplay = document.getElementById('duel-turn-display');
+const singlePlayerResults = document.getElementById('single-player-results');
+const duelResults = document.getElementById('duel-results');
+const duelWinnerEl = document.getElementById('duel-winner');
+const p1FinalScore = document.getElementById('p1-final-score');
+const p1FinalTime = document.getElementById('p1-final-time');
+const p1AvgTime = document.getElementById('p1-avg-time');
+const p2FinalScore = document.getElementById('p2-final-score');
+const p2FinalTime = document.getElementById('p2-final-time');
+const p2AvgTime = document.getElementById('p2-avg-time');
+
+// --- GAME STATE ---
+let score = 0;
+let timerId = null;
+let timeLeft = 45;
+const INITIAL_TIME = 45;
+let questionsAnswered = 0;
+let correctAnswers = 0;
+let skipsLeft = 3;
+let currentQuestion = null;
+let currentMode = '';
+let currentDifficulty = 0;
+let currentContent = [];
+let gameActive = false;
+let timeScores = [];
+let leaderboard = [];
+let questionStartTime = 0;
+const MAX_QUESTIONS = 10;
+// Duel State
+let isDuelMode = false;
+let currentPlayer = 1;
+let player1Stats = { score: 0, timeScores: [] };
+let player2Stats = { score: 0, timeScores: [] };
+
+// --- UTILITY FUNCTIONS ---
+const showScreen = (screen) => {
+   [standbyScreen, mainMenu, gameContainer, countdownOverlay, quitConfirmOverlay, saveScoreOverlay, endGameScreen, cyberSafetyScreen, passwordStrengthScreen, creditsScreen, leaderboardScreen, interstitialScreen].forEach(s => s.style.display = 'none');
+   if (screen) {
+       screen.style.display = (screen === countdownOverlay || screen === quitConfirmOverlay || screen === saveScoreOverlay || screen.id.includes('end-game') || screen.id.includes('interstitial')) ? 'flex' : 'block';
+   }
+};
+const shuffleArray = (array) => {
+   for (let i = array.length - 1; i > 0; i--) {
+       const j = Math.floor(Math.random() * (i + 1));
+       [array[i], array[j]] = [array[j], array[i]];
+   }
+   return array;
+};
+const getRecentDate = () => {
+   const date = new Date();
+   const daysToSubtract = Math.floor(Math.random() * 14); // 0 to 13 days ago
+   date.setDate(date.getDate() - daysToSubtract);
+   return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+};
+
+// --- GAME LOGIC ---
+const resetGame = (fullReset = true) => {
+   clearInterval(timerId);
+   score = 0;
+   questionsAnswered = 0;
+   correctAnswers = 0;
+   skipsLeft = 3;
+   timeLeft = INITIAL_TIME;
+   timeScores = [];
+   currentContent = [];
+   gameActive = false;
+   isDuelMode = false;
+   currentPlayer = 1;
+   player1Stats = { score: 0, timeScores: [] };
+   player2Stats = { score: 0, timeScores: [] };
+   if (fullReset) {
+       showScreen(mainMenu);
+   }
+   // Reset UI
+   scoreEl.textContent = '0';
+   timerEl.textContent = INITIAL_TIME;
+   correctCountEl.textContent = '0 / 0';
+   levelEl.textContent = '';
+   skipsRemainingEl.textContent = skipsLeft;
+   messageBox.classList.add('hidden');
+   nextBtn.classList.add('hidden');
+   singlePlayerResults.style.display = 'block';
+   duelResults.classList.add('hidden');
+};
+const startGame = (mode, difficulty = null) => {
+   resetGame(false);
+   currentMode = mode;
+   currentDifficulty = difficulty;
+   isDuelMode = mode === 'duel';
+   switch(mode) {
+       case 'phishing':
+           currentContent = shuffleArray([...allContent.phishing.singlePlayer.filter(q => q.level === difficulty)]);
+           gameTitleEl.textContent = 'Phishing Puzzler';
+           levelEl.textContent = {1: 'Easy', 2: 'Medium', 3: 'Hard'}[difficulty];
+           break;
+       case 'malware':
+           currentContent = shuffleArray([...allContent.malware]);
+           gameTitleEl.textContent = 'Malware Maze';
+           levelEl.textContent = 'Mixed';
+           break;
+       case 'social':
+           currentContent = shuffleArray([...allContent.social]);
+           gameTitleEl.textContent = 'Social Sleuth';
+           levelEl.textContent = 'Mixed';
+           break;
+       case 'masters':
+           currentContent = shuffleArray([...allContent.masters]);
+           gameTitleEl.textContent = 'Masters Quiz';
+           levelEl.textContent = 'Expert';
+           break;
+       case 'duel':
+           currentContent = shuffleArray([...allContent.phishing.singlePlayer.filter(q => q.level === 2)]); // Duel uses medium questions
+           gameTitleEl.textContent = '2-Player Duel';
+           levelEl.textContent = 'Medium';
+           break;
+   }
+   currentContent = currentContent.slice(0, MAX_QUESTIONS);
+   startCountdown();
+};
+const startCountdown = () => {
+   showScreen(countdownOverlay);
+   let count = 3;
+   countdownText.textContent = count;
+   const interval = setInterval(() => {
+       count--;
+       if (count > 0) {
+           countdownText.textContent = count;
+       } else {
+           clearInterval(interval);
+           runGame();
+       }
+   }, 1000);
+};
+const runGame = () => {
+   showScreen(gameContainer);
+   if (isDuelMode) {
+       duelTurnDisplay.classList.remove('hidden');
+       duelTurnDisplay.textContent = `Player ${currentPlayer}'s Turn`;
+   } else {
+       duelTurnDisplay.classList.add('hidden');
+   }
+   displayQuestion();
+};
+const displayQuestion = () => {
+   if (questionsAnswered >= currentContent.length) {
+       endGame();
+       return;
+   }
+   currentQuestion = currentContent[questionsAnswered];
+   gameActive = true;
+   // Hide all templates first
+   [emailTemplate, malwareTemplate, socialTemplate].forEach(t => t.classList.add('hidden'));
+   answerButtons.innerHTML = '';
+   messageBox.classList.add('hidden');
+   nextBtn.classList.add('hidden');
+   if (currentMode === 'phishing' || currentMode === 'duel') {
+       emailTemplate.classList.remove('hidden');
+       document.getElementById('email-sender').textContent = currentQuestion.sender;
+       document.getElementById('email-subject').textContent = currentQuestion.subject;
+       document.getElementById('email-body').innerHTML = currentQuestion.body;
+       document.getElementById('email-date').textContent = getRecentDate();
+       const phishingBtn = document.createElement('button');
+       phishingBtn.className = "menu-button bg-rose-500 text-white font-bold py-4 rounded-lg text-xl";
+       phishingBtn.textContent = "Phishing";
+       phishingBtn.onclick = () => checkAnswer(true);
+       const legitimateBtn = document.createElement('button');
+       legitimateBtn.className = "menu-button bg-emerald-500 text-white font-bold py-4 rounded-lg text-xl";
+       legitimateBtn.textContent = "Legitimate";
+       legitimateBtn.onclick = () => checkAnswer(false);
+       answerButtons.append(phishingBtn, legitimateBtn);
+   } else if (currentMode === 'masters') {
+       malwareTemplate.classList.remove('hidden');
+       document.getElementById('scenario-text').textContent = currentQuestion.question;
+       const answerOptions = shuffleArray(
+           currentQuestion.answers.map((answer, index) => ({ text: answer, originalIndex: index }))
+       );
+       answerOptions.forEach(option => {
+           const button = document.createElement('button');
+           button.className = "menu-button bg-sky-600 text-white font-bold py-4 rounded-lg text-lg";
+           button.textContent = option.text;
+           button.onclick = () => checkAnswer(option.originalIndex);
+           answerButtons.appendChild(button);
+       });
+   } else if (currentMode === 'malware' || currentMode === 'social') {
+       if (currentMode === 'malware') {
+           malwareTemplate.classList.remove('hidden');
+           document.getElementById('scenario-text').textContent = currentQuestion.text;
+       } else { // social mode
+           socialTemplate.classList.remove('hidden');
+           const socialContainer = document.getElementById('social-scenario');
+           socialContainer.innerHTML = '';
+           currentQuestion.scenario.forEach(msg => {
+               const bubble = document.createElement('div');
+               bubble.className = `sms-bubble ${msg.from}`;
+               bubble.textContent = msg.text;
+               socialContainer.appendChild(bubble);
+           });
+       }
+       const options = shuffleArray([...currentQuestion.options]);
+       options.forEach(option => {
+           const button = document.createElement('button');
+           button.className = "menu-button bg-sky-600 text-white font-bold py-4 rounded-lg text-lg";
+           button.textContent = option;
+           button.onclick = () => checkAnswer(option);
+           answerButtons.appendChild(button);
+       });
+   }
+   startTimer();
+};
+const startTimer = () => {
+   timeLeft = INITIAL_TIME;
+   timerEl.textContent = timeLeft;
+   questionStartTime = Date.now();
+   timerId = setInterval(() => {
+       timeLeft--;
+       timerEl.textContent = timeLeft;
+       if (timeLeft <= 0) {
+           clearInterval(timerId);
+           checkAnswer(null); // Timeout counts as wrong answer
+       }
+   }, 1000);
+};
+const checkAnswer = (guess) => {
+   if (!gameActive) return;
+   gameActive = false;
+   clearInterval(timerId);
+   const timeTaken = (Date.now() - questionStartTime) / 1000;
+   let isCorrect = false;
+   if (guess !== null) {
+       if (currentMode === 'phishing' || currentMode === 'duel') {
+           isCorrect = (guess === currentQuestion.isFake);
+       } else if (currentMode === 'malware' || currentMode === 'social') {
+           isCorrect = (guess === currentQuestion.answer);
+       } else if (currentMode === 'masters') {
+           isCorrect = (guess === currentQuestion.correct);
+       }
+   }
+   messageBox.classList.remove('hidden');
+   if (isCorrect) {
+       const points = 100 + (timeLeft * 5);
+       score += points;
+       correctAnswers++;
+       messageBox.className = "text-center p-4 mb-4 rounded-lg text-white font-semibold bg-emerald-500";
+       messageBox.innerHTML = `<strong>Correct!</strong> +${points} points. <br> ${currentQuestion.explanation}`;
+       timeScores.push(timeTaken);
+       if (confetti) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+   } else {
+       messageBox.className = "text-center p-4 mb-4 rounded-lg text-white font-semibold bg-rose-500";
+       const explanation = currentQuestion ? currentQuestion.explanation : 'Time is up!';
+       messageBox.innerHTML = `<strong>Incorrect!</strong> <br> ${explanation}`;
+   }
+   questionsAnswered++;
+   // Update UI
+   scoreEl.textContent = score;
+   correctCountEl.textContent = `${correctAnswers} / ${questionsAnswered}`;
+   // Disable answer buttons
+   Array.from(answerButtons.children).forEach(btn => btn.disabled = true);
+   nextBtn.classList.remove('hidden');
+};
+const nextQuestion = () => {
+   if (questionsAnswered >= currentContent.length) {
+       endGame();
+   } else {
+       displayQuestion();
+   }
+};
+const skipQuestion = () => {
+   if (skipsLeft > 0 && gameActive) {
+       skipsLeft--;
+       skipsRemainingEl.textContent = skipsLeft;
+       clearInterval(timerId);
+       questionsAnswered++;
+       displayQuestion();
+   }
+};
+const endGame = () => {
+   gameActive = false;
+   clearInterval(timerId);
+   if (isDuelMode) {
+       if (currentPlayer === 1) {
+           player1Stats.score = score;
+           player1Stats.timeScores = [...timeScores];
+           switchTurns();
+       } else {
+           player2Stats.score = score;
+           player2Stats.timeScores = [...timeScores];
+           endDuel();
+       }
+   } else {
+       const avgTime = timeScores.length ? (timeScores.reduce((a, b) => a + b, 0) / timeScores.length).toFixed(1) : 0;
+       finalScoreEl.textContent = score;
+       avgTimeEl.textContent = `${avgTime}s`;
+       showScreen(endGameScreen);
+       // High score check
+       const lowestHighScore = leaderboard.length < 5 ? 0 : leaderboard[4].score;
+       if (score > 0 && score > lowestHighScore) {
+           setTimeout(() => {
+               showScreen(saveScoreOverlay);
+           }, 500);
+       }
+   }
+};
+const switchTurns = () => {
+   showScreen(interstitialScreen);
+};
+const startPlayer2Turn = () => {
+   // Reset per-player state
+   score = 0;
+   questionsAnswered = 0;
+   correctAnswers = 0;
+   skipsLeft = 3;
+   timeLeft = INITIAL_TIME;
+   timeScores = [];
+   currentPlayer = 2;
+   // Reset UI
+   scoreEl.textContent = '0';
+   timerEl.textContent = INITIAL_TIME;
+   correctCountEl.textContent = '0 / 0';
+   skipsRemainingEl.textContent = skipsLeft;
+   startCountdown();
+};
+const endDuel = () => {
+   showScreen(endGameScreen);
+   singlePlayerResults.style.display = 'none';
+   duelResults.classList.remove('hidden');
+   const p1Avg = player1Stats.timeScores.length ? (player1Stats.timeScores.reduce((a,b)=>a+b,0) / player1Stats.timeScores.length).toFixed(1) : 0;
+   const p2Avg = player2Stats.timeScores.length ? (player2Stats.timeScores.reduce((a,b)=>a+b,0) / player2Stats.timeScores.length).toFixed(1) : 0;
+   const p1TotalTime = player1Stats.timeScores.reduce((a,b)=>a+b,0).toFixed(1);
+   const p2TotalTime = player2Stats.timeScores.reduce((a,b)=>a+b,0).toFixed(1);
+   p1FinalScore.textContent = player1Stats.score;
+   p1AvgTime.textContent = `${p1Avg}s`;
+   p1FinalTime.textContent = p1TotalTime;
+   p2FinalScore.textContent = player2Stats.score;
+   p2AvgTime.textContent = `${p2Avg}s`;
+   p2FinalTime.textContent = p2TotalTime;
+   if (player1Stats.score > player2Stats.score) {
+       duelWinnerEl.textContent = 'Player 1 Wins!';
+   } else if (player2Stats.score > player1Stats.score) {
+       duelWinnerEl.textContent = 'Player 2 Wins!';
+   } else {
+       duelWinnerEl.textContent = "It's a Tie!";
+   }
+};
+// --- LEADERBOARD ---
+const loadLeaderboard = () => {
+   const storedScores = localStorage.getItem('phishingPuzzlerLeaderboard');
+   leaderboard = storedScores ? JSON.parse(storedScores) : [];
+};
+const saveScore = () => {
+   const initials = document.getElementById('initials-input').value.trim().toUpperCase();
+   if (initials) {
+       leaderboard.push({ name: initials, score: score });
+       leaderboard.sort((a, b) => b.score - a.score);
+       leaderboard = leaderboard.slice(0, 5); // Keep top 5
+       localStorage.setItem('phishingPuzzlerLeaderboard', JSON.stringify(leaderboard));
+       showScreen(endGameScreen);
+       displayLeaderboard(); // To refresh if they go back
+   }
+};
+const displayLeaderboard = () => {
+   leaderboardListEl.innerHTML = '';
+   if (leaderboard.length === 0) {
+       leaderboardListEl.innerHTML = '<p class="text-center text-slate-500">No scores yet. Be the first!</p>';
+   } else {
+       leaderboard.forEach((entry, index) => {
+           const scoreItem = document.createElement('div');
+           scoreItem.className = 'flex justify-between items-center p-3 rounded-lg';
+           scoreItem.innerHTML = `
+<span class="font-bold text-lg text-slate-700">${index + 1}. ${entry.name}</span>
+<span class="font-semibold text-lg text-indigo-600">${entry.score}</span>
+           `;
+           leaderboardListEl.appendChild(scoreItem);
+       });
+   }
+   showScreen(leaderboardScreen);
+};
+// --- PASSWORD STRENGTH ---
+const checkPasswordStrength = () => {
+   const password = passwordInput.value;
+   let score = 0;
+   const feedbackItems = [];
+   if (password.length >= 8) {
+       score += 25;
+       feedbackItems.push({text: 'At least 8 characters long.', valid: true});
+   } else {
+       feedbackItems.push({text: 'At least 8 characters long.', valid: false});
+   }
+   if (/[A-Z]/.test(password)) {
+       score += 25;
+       feedbackItems.push({text: 'Contains an uppercase letter.', valid: true});
+   } else {
+       feedbackItems.push({text: 'Contains an uppercase letter.', valid: false});
+   }
+   if (/[0-9]/.test(password)) {
+       score += 25;
+       feedbackItems.push({text: 'Contains a number.', valid: true});
+   } else {
+       feedbackItems.push({text: 'Contains a number.', valid: false});
+   }
+   if (/[^A-Za-z0-9]/.test(password)) {
+       score += 25;
+       feedbackItems.push({text: 'Contains a special character.', valid: true});
+   } else {
+       feedbackItems.push({text: 'Contains a special character.', valid: false});
+   }
+   strengthBar.style.width = `${score}%`;
+   if (score < 50) {
+       strengthBar.style.backgroundColor = 'hsl(var(--danger-hue) 70% 50%)';
+       strengthText.textContent = "Weak";
+       strengthText.style.color = 'hsl(var(--danger-hue) 70% 50%)';
+   } else if (score < 100) {
+       strengthBar.style.backgroundColor = 'hsl(var(--warning-hue) 80% 50%)';
+       strengthText.textContent = "Medium";
+       strengthText.style.color = 'hsl(var(--warning-hue) 80% 50%)';
+   } else {
+       strengthBar.style.backgroundColor = 'hsl(var(--success-hue) 60% 50%)';
+       strengthText.textContent = "Strong";
+       strengthText.style.color = 'hsl(var(--success-hue) 60% 50%)';
+   }
+   strengthFeedback.innerHTML = feedbackItems.map(item => `
+<li class="flex items-center ${item.valid ? 'text-emerald-600' : 'text-rose-600'}">
+<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+               ${item.valid ? '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />' : '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />'}
+</svg>
+           ${item.text}
+</li>
+   `).join('');
+   if (password.length === 0) {
+       strengthText.textContent = "";
+       strengthFeedback.innerHTML = "";
+   }
+};
+
+// --- EVENT LISTENERS ---
+standbyScreen.addEventListener('click', () => showScreen(mainMenu));
+// Main Menu Buttons
+document.querySelectorAll('[data-difficulty]').forEach(btn => {
+   btn.addEventListener('click', () => {
+       startGame('phishing', parseInt(btn.dataset.difficulty));
+       document.getElementById('play-again-btn').onclick = () => startGame('phishing', parseInt(btn.dataset.difficulty));
+   });
+});
+document.getElementById('malware-maze-btn').addEventListener('click', () => {
+   startGame('malware');
+   document.getElementById('play-again-btn').onclick = () => startGame('malware');
+});
+document.getElementById('social-sleuth-btn').addEventListener('click', () => {
+   startGame('social');
+   document.getElementById('play-again-btn').onclick = () => startGame('social');
+});
+document.getElementById('masters-quiz-btn').addEventListener('click', () => {
+   startGame('masters');
+   document.getElementById('play-again-btn').onclick = () => startGame('masters');
+});
+document.getElementById('duel-mode-btn').addEventListener('click', () => {
+   startGame('duel');
+   document.getElementById('play-again-btn').onclick = () => startGame('duel');
+});
+
+// In-Game Buttons
+giveUpBtn.addEventListener('click', () => showScreen(quitConfirmOverlay));
+skipBtn.addEventListener('click', skipQuestion);
+nextBtn.addEventListener('click', nextQuestion);
+document.getElementById('keep-playing-btn').addEventListener('click', () => showScreen(gameContainer));
+document.getElementById('confirm-quit-btn').addEventListener('click', () => {
+   resetGame();
+   showScreen(mainMenu);
+});
+// Screen Navigation Buttons
+document.getElementById('leaderboard-btn').addEventListener('click', displayLeaderboard);
+document.getElementById('cyber-safety-btn').addEventListener('click', () => showScreen(cyberSafetyScreen));
+document.getElementById('credits-btn').addEventListener('click', () => showScreen(creditsScreen));
+document.getElementById('password-detector-btn').addEventListener('click', () => showScreen(passwordStrengthScreen));
+document.getElementById('back-to-menu-btn').addEventListener('click', () => showScreen(mainMenu));
+document.getElementById('back-to-menu-from-safety-btn').addEventListener('click', () => showScreen(mainMenu));
+document.getElementById('back-to-menu-from-password-btn').addEventListener('click', () => showScreen(mainMenu));
+document.getElementById('back-to-menu-from-credits-btn').addEventListener('click', () => showScreen(mainMenu));
+// End Game Buttons
+document.getElementById('main-menu-btn').addEventListener('click', () => {
+   resetGame();
+   showScreen(mainMenu);
+});
+document.getElementById('play-again-btn').addEventListener('click', () => {
+   // This button's action is set when a game mode is chosen
+});
+// Save Score Buttons
+document.getElementById('save-score-btn').addEventListener('click', saveScore);
+document.getElementById('skip-save-btn').addEventListener('click', () => showScreen(endGameScreen));
+// Duel Mode
+document.getElementById('start-next-turn-btn').addEventListener('click', startPlayer2Turn);
+// Password Strength
+passwordInput.addEventListener('input', checkPasswordStrength);
+// --- INITIALIZATION ---
+loadLeaderboard();
+});
+</script>
+</body>
+</html>
